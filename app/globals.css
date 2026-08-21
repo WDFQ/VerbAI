@@ -1,1 +1,8 @@
 @import "tailwindcss";
+
+@theme {
+  --color-deep-pink: #d03d71;
+
+  --font-playfair-display: var(--font-playfair-display);
+
+}
