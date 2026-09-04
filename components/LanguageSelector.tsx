@@ -15,7 +15,7 @@ export default function LanguageSelector({ language, onSelect, options }: Langua
 
     return (
         <>
-            <button onClick={() => setIsOpen(true)} className="px-4 py-2 rounded-full bg-gray-700 text-white text-sm">
+            <button onClick={() => setIsOpen(true)} className="px-4 py-2 rounded-full bg-gray-700 text-white text-sm cursor-pointer">
                 {language ?? "Choose language..."}
             </button>
 
@@ -28,7 +28,7 @@ export default function LanguageSelector({ language, onSelect, options }: Langua
                 {/* List of languages */}
                 <div className="flex-1 overflow-y-auto">
                     {options.map((option) => (
-                        <button key={option} onClick={() => { onSelect(option); setIsOpen(false); }} className="block w-full text-left px-4 py-3 text-sm font-medium hover:bg-gray-300">
+                        <button key={option} onClick={() => { onSelect(option); setIsOpen(false); }} className="block w-full text-left px-4 py-3 text-sm font-medium hover:bg-gray-300 cursor-pointer">
                             {option}
                         </button>
                     ))}
@@ -36,7 +36,7 @@ export default function LanguageSelector({ language, onSelect, options }: Langua
 
                 {/* Close button */}
                 <div className="flex justify-center pb-6 pt-2">
-                    <button onClick={() => setIsOpen(false)} className="w-12 h-12 rounded-full bg-gray-900 flex items-center justify-center">
+                    <button onClick={() => setIsOpen(false)} className="w-12 h-12 rounded-full bg-gray-900 flex items-center justify-center cursor-pointer">
                         <Image src={CloseIcon} alt="Close" height={20} width={20} className="invert"/>
                     </button>
                 </div>
