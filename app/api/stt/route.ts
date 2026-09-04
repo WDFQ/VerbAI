@@ -5,7 +5,7 @@ export async function POST(req: NextRequest) {
         const { audioBase64, languageCode } = await req.json()
 
         // if missing audio return a 400
-        if (!audioBase64) {
+        if (!audioBase64 || !languageCode) {
             return NextResponse.json({ error: 'Missing audioBase64' }, { status: 400 })
         }
 
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
                 config: {
                     encoding: 'WEBM_OPUS',
                     sampleRateHertz: 48000,
-                    languageCode: languageCode || 'en-US',
+                    languageCode: languageCode,
                 },
                 audio: { content: audioBase64 },
             }),
