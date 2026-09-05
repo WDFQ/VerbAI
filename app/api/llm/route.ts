@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
  * @returns the translated language as string
  */
 async function translate(sttText: String, targetLanguage: String) {
-    const ai = new GoogleGenAI({})
+    const ai = new GoogleGenAI({ apiKey: process.env.LLM_API_KEY })
     const interaction = await ai.interactions.create({
         model: 'gemini-3.7-flash',
         input: `Translate the following into ${targetLanguage}. Only return the translated text:\n\n${sttText}`,

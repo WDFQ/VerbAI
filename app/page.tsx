@@ -68,12 +68,25 @@ export default function Home() {
                 return;
             }
 
+            // Call the translation API
+            const translationResponse = await fetch("/api/llm", {
+                method: "POST",
+                headers: { "Content-Type": "application.json" },
+                body: JSON.stringify({ "sttText": data.transcript, "targetLanguage": role === "staff" ? staffLanguage : clientLanguage})
+            })
+
+            if (!translationResponse.ok) {
+                alert(`Translation failed: ${data.error ?? "unknown error"}`);
+                return;
+            }
+
+            const translation = await translationResponse.json();
+
             const newMessage: TranscriptMessage = {
                 id: crypto.randomUUID(),
                 role,
                 originalText: data.transcript,
-                // TODO: replace with the real translation once /api/llm is wired in
-                translatedText: "this is translated message",
+                translatedText: translation.translatedText,
                 timestamp: new Date().toISOString(),
             };
             setMessages((prev) => [...prev, newMessage]);
