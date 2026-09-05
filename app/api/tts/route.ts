@@ -57,7 +57,8 @@ export async function POST(request: NextRequest) {
         
         const interaction = await ai.interactions.create({
             model: "gemini-3.1-flash-tts-preview",
-            input: text,
+            input: `Speak the following text in the language identified by the BCP-47 code ${languageCode}. Return only the spoken text.
+            ${text}`,
             response_format: {
                 type: "audio",
             },
@@ -80,17 +81,18 @@ export async function POST(request: NextRequest) {
             );
         }
         
-        const audioBuffer = Buffer.from(audioData, "base64");
+        const pcmBuffer = Buffer.from(audioData, "base64");
+        const wavBuffer = createWavBuffer(pcmBuffer);
         
-        return new NextResponse(audioBuffer, {
+        return new NextResponse(wavBuffer, {
             status: 200,
-            
             headers: {
                 "Content-Type": "audio/wav",
-                "Content-Length": audioBuffer.length.toString(),
+                "Content-Length": wavBuffer.length.toString(),
                 "Cache-Control": "no-store",
                 "X-Language-Code": languageCode,
             },
+
         });
     } catch (error) {
         console.error("TTS error:", error);
