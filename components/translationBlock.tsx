@@ -20,7 +20,7 @@ type TranslationBlockProps = {
 
 export default function TranslationBlock({ role, language, onLanguageChange, languageOptions, isActive, isDisabled, onMicTap, messages }: TranslationBlockProps) {
     return (
-        <div className="flex flex-col items-center bg-gray-200 rounded-2xl p-4 w-full h-full">
+        <div className="flex flex-col items-center bg-gray-200 rounded-2xl p-4 w-full h-full min-h-0">
             {/* Language Selector */}
             <LanguageSelector language={language} onSelect={onLanguageChange} options={languageOptions} />
 

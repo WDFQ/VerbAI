@@ -21,12 +21,12 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
 	return (
 		<html className={`${playfairDisplay.variable} h-full antialiased`} lang="en">
-			<body className="min-h-full flex flex-col">
+			<body className="h-screen flex flex-col overflow-hidden">
 				<SidebarProvider>
 					<HomeSidebar />
-					<div className="flex flex-col flex-1">
+					<div className="flex flex-col flex-1 min-h-0">
 						<Navbar />
-						<main className="flex-1">{children}</main>
+						<main className="flex-1 min-h-0">{children}</main>
 					</div>
 				</SidebarProvider>
 			</body>

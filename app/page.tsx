@@ -68,8 +68,15 @@ export default function Home() {
                 return;
             }
 
-            // TODO: feed data.transcript into the translation pipeline / messages
-            console.log("Transcript:", data.transcript);
+            const newMessage: TranscriptMessage = {
+                id: crypto.randomUUID(),
+                role,
+                originalText: data.transcript,
+                // TODO: replace with the real translation once /api/llm is wired in
+                translatedText: "this is translated message",
+                timestamp: new Date().toISOString(),
+            };
+            setMessages((prev) => [...prev, newMessage]);
         } catch (error) {
             console.error("Failed to process recording:", error);
             alert("Something went wrong while processing the recording.");
@@ -130,7 +137,7 @@ export default function Home() {
                 Save session
             </button>
 
-            <div className="flex gap-4 p-4 flex-1">
+            <div className="flex gap-4 p-4 flex-1 min-h-0">
                 {/* Staff side */}
                 <TranslationBlock 
                     role="staff"
