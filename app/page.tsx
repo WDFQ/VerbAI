@@ -3,6 +3,8 @@
 import { useState } from "react";
 import TranslationBlock from "@/components/translationBlock";
 import { TranscriptMessage } from "@/types/transcript";
+import { useAudioRecorder, blobToBase64 } from "@/hooks/useAudioRecorder";
+import { toBcp47 } from "@/lib/languageCodes";
 
 export default function Home() {
     const [staffLanguage, setStaffLanguage] = useState<string | null>(null);
@@ -12,6 +14,67 @@ export default function Home() {
 
     const bothLanguagesSelected = staffLanguage != null && clientLanguage != null;
     const options = ["English", "Dari", "Swahili", "Kinyarwanda"];
+
+    const recorder = useAudioRecorder();
+
+    const handleMicTap = async (role: "staff" | "client") => {
+        if (activeTurn === null) {
+            // Starting a new recording
+            try {
+                await recorder.start();
+                setActiveTurn(role);
+            } catch (error) {
+                if (error instanceof DOMException && error.name === "NotAllowedError") {
+                    alert("Microphone access was denied. Please allow microphone permissions in your browser settings.");
+                } else if (error instanceof DOMException && error.name === "NotFoundError") {
+                    alert("No microphone was found. Please connect a microphone and try again.");
+                } else {
+                    console.error("Failed to start recording:", error);
+                    alert("Could not start recording. Please try again.");
+                }
+            }
+            return;
+        }
+        // Ensure you don't record for the inactive role
+        if (activeTurn !== role) {
+            return;
+        }
+
+        // Stopping the active recording for this role
+        try {
+            const blob = await recorder.stop();
+            setActiveTurn(null);
+
+            // Convert audio file into correct format
+            const audioBase64 = await blobToBase64(blob);
+            const languageCode = toBcp47(role === "staff" ? staffLanguage : clientLanguage);
+
+            if (!languageCode) {
+                alert("Unsupported language selected. Please choose a different language.");
+                return;
+            }
+
+            // Call the speech to text API
+            const response = await fetch("/api/stt", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ audioBase64, languageCode }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                alert(`Transcription failed: ${data.error ?? "unknown error"}`);
+                return;
+            }
+
+            // TODO: feed data.transcript into the translation pipeline / messages
+            console.log("Transcript:", data.transcript);
+        } catch (error) {
+            console.error("Failed to process recording:", error);
+            alert("Something went wrong while processing the recording.");
+        }
+    };
 
     const handleSaveSession = async () => {
         const payload = {
@@ -76,7 +139,7 @@ export default function Home() {
                     languageOptions={options}
                     isActive={activeTurn === "staff"}
                     isDisabled={!bothLanguagesSelected || activeTurn === "client"}
-                    onMicTap={() => setActiveTurn(activeTurn === "staff" ? null : "staff")}
+                    onMicTap={() => handleMicTap("staff")}
                     messages={messages}
                 />
 
@@ -88,7 +151,7 @@ export default function Home() {
                     languageOptions={options}
                     isActive={activeTurn === "client"}
                     isDisabled={!bothLanguagesSelected || activeTurn === "staff"}
-                    onMicTap={() => setActiveTurn(activeTurn === "client" ? null : "client")}
+                    onMicTap={() => handleMicTap("client")}
                     messages={messages}
                 />
             </div>
