@@ -3,7 +3,7 @@ import { Playfair_Display, Geist } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { HomeSidebar } from "@/components/home-sidebar";
+import { HomeSidebar } from "@/components/homeSidebar";
 import Navbar from "@/components/navbar";
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });

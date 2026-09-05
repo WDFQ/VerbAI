@@ -3,8 +3,8 @@
 import Image from "next/image";
 import MicIcon from "../public/mic.svg";
 import StopIcon from "../public/stop.svg";
-import LanguageSelector from "./LanguageSelector";
-import TranscriptArea from "./TranscriptArea";
+import LanguageSelector from "./languageSelector";
+import TranscriptArea from "./transcriptArea";
 import { TranscriptMessage } from "@/types/transcript";
 
 type TranslationBlockProps = {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import TranslationBlock from "@/components/TranslationBlock";
+import TranslationBlock from "@/components/translationBlock";
 import { TranscriptMessage } from "@/types/transcript";
 
 export default function Home() {
@@ -27,16 +27,13 @@ export default function Home() {
     }
 
     return (
-        <div className="flex flex-col h-screen">
-            {/* Navbar here */}
-
+        <div className="flex flex-col h-full">
             {/* Save button */}
             <button onClick={handleSaveSession} className="px-4 py-2 bg-pink-500 text-black rounded cursor-pointer">
                 Save session
             </button>
 
-        
-            <div className="flex gap-4 p-4 h-screen">
+            <div className="flex gap-4 p-4 flex-1">
                 {/* Staff side */}
                 <TranslationBlock 
                     role="staff"
