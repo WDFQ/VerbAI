@@ -13,8 +13,9 @@ export default function Home() {
     const bothLanguagesSelected = staffLanguage != null && clientLanguage != null;
     const options = ["English", "Dari", "Swahili", "Kinyarwanda"];
 
-    const handleSaveSession = () => {
+    const handleSaveSession = async () => {
         const payload = {
+            sessionId: crypto.randomUUID(),
             staffLanguage,
             clientLanguage,
             exchanges: messages.map((m) => ({
@@ -23,8 +24,41 @@ export default function Home() {
                 clientText: m.role === "client" ? m.originalText : m.translatedText
             })),
         };
-        //Send payload to endpoint here
-    }
+        try {
+            const response = await fetch("/api/sessions", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            let data: { error?: string; success?: boolean; sessionId?: string } = {};
+            try {
+                data = await response.json();
+            } catch {
+                // no JSON body to parse
+            }
+
+            switch (response.status) {
+                case 200:
+                    alert("Session saved successfully.");
+                    break;
+                case 400:
+                    alert(`Could not save session: ${data.error ?? "the request data was invalid."}`);
+                    break;
+                case 500:
+                    alert("Something went wrong on the server. Please try again later.");
+                    break;
+                case 502:
+                    alert(`Failed to save session: ${data.error ?? "the server could not write to the database."} Please try again.`);
+                    break;
+                default:
+                    alert(`Unexpected response from server (status ${response.status}). Please try again or contact support.`);
+            }
+        } catch (error) {
+            console.error("Network error while saving session:", error);
+            alert("Could not reach the server. Check your internet connection and try again.");
+        }
+    };
 
     return (
         <div className="flex flex-col h-full">
