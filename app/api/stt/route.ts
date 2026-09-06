@@ -1,71 +1,61 @@
 import { NextRequest, NextResponse } from "next/server";
-import { GoogleGenAI } from "@google/genai";
 
-const apiKey = process.env.SPEECH_API_KEY;
+export async function POST(req: NextRequest) {
 
-if (!apiKey) {
-    throw new Error("SPEECH_API_KEY is not configured");
-}
-
-const ai = new GoogleGenAI({
-    apiKey,
-});
-
-export async function POST(request: NextRequest) {
     try {
-        const body = await request.json();
+        const { audioBase64, languageCode } = await req.json();
 
-        const audioBase64 = body.audioBase64;
-        const languageCode = body.languageCode || "en-NZ";
-
-        if (!audioBase64) {
+        if (!audioBase64 || !languageCode) {
             return NextResponse.json(
-                { error: "No audio provided" },
+                { error: "Missing audioBase64 or languageCode" },
                 { status: 400 }
             );
         }
-
-        // Remove data URL prefix if the frontend includes one
-        const base64Audio = audioBase64.includes(",")
-            ? audioBase64.split(",")[1]
-            : audioBase64;
-
-        const interaction = await ai.interactions.create({
-            model: "gemini-3.7-flash",
-            input: [
-                {
-                    type: "text",
-                    text: `Generate an accurate transcript of the speech in this audio.
-The spoken language is ${languageCode}.
-Return only the transcript. Do not add explanations or commentary.`,
+        const response = await fetch(
+            `https://speech.googleapis.com/v1/speech:recognize?key=${process.env.SPEECH_API_KEY}`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
                 },
-                {
-                    type: "audio",
-                    data: base64Audio,
-                    mime_type: "audio/webm",
-                },
-            ],
-        });
+                body: JSON.stringify({
+                    config: {
+                        encoding: "WEBM_OPUS",
+                        sampleRateHertz: 48000,
+                        languageCode: languageCode,
+                    },
+                    audio: {
+                        content: audioBase64,
+                    },
+                }),
+            }
+        );
 
-        const transcript = interaction.output_text?.trim();
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error("Speech API error:", errorText);
 
-        if (!transcript) {
             return NextResponse.json(
-                { error: "No speech could be transcribed" },
-                { status: 422 }
+                { error: "Speech-to-text failed" },
+                { status: 502 }
             );
         }
 
-        return NextResponse.json({
-            transcript,
-            languageCode,
-        });
-    } catch (error) {
-        console.error("STT error:", error);
+        const data = await response.json();
+
+        const transcript =
+            data.results?.[0]?.alternatives?.[0]?.transcript ?? "";
 
         return NextResponse.json(
-            { error: "Speech-to-text conversion failed" },
-            { status: 500 }
+            { transcript },
+            { status: 200 }
+        );
+    } catch (error) {
+        console.error("Invalid request body:", error);
+
+        return NextResponse.json(
+            { error: "Invalid JSON body" },
+            { status: 400 }
         );
     }
 }
