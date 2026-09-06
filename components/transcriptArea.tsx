@@ -17,7 +17,7 @@ export default function TranscriptArea({ messages, ownRole }: TranscriptAreaProp
                         <span className="text-[10px] text-gray-500 mb-0.5">
                             {message.role === "staff" ? "Staff" : "Client"}
                         </span>
-                        <div className={`max-w-[85%] px-3 py-2 rounded-xl text-sm ${isOwnSpeaker ? "bg-gray-300 text-gray-900" : "bg-gray-700 text-white"}`}>
+                        <div className={`max-w-[85%] px-3 py-2 rounded-xl text-sm font-playfair-display font-bold ${isOwnSpeaker ? "bg-gray-300 text-gray-900" : "bg-gray-700 text-white"}`}>
                             {text}
                         </div>
                     </div>

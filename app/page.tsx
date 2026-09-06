@@ -72,7 +72,7 @@ export default function Home() {
             const translationResponse = await fetch("/api/llm", {
                 method: "POST",
                 headers: { "Content-Type": "application.json" },
-                body: JSON.stringify({ "sttText": data.transcript, "targetLanguage": role === "staff" ? staffLanguage : clientLanguage})
+                body: JSON.stringify({ "sttText": data.transcript, "targetLanguage": role === "staff" ? clientLanguage : staffLanguage})
             })
 
             if (!translationResponse.ok) {
@@ -146,7 +146,7 @@ export default function Home() {
     return (
         <div className="flex flex-col h-full">
             {/* Save button */}
-            <button onClick={handleSaveSession} className="px-4 py-2 bg-pink-500 text-black rounded cursor-pointer">
+            <button onClick={handleSaveSession} className="px-4 py-2 m-2 rounded bg-white border border-deep-pink text-black rounded cursor-pointer font-playfair-display font-bold">
                 Save session
             </button>
 
