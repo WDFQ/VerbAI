@@ -60,24 +60,56 @@ Translates a piece of text into a target language using Gemini Flash.
 
 ## POST /api/stt
 
-Converts recorded audio into text using Google Cloud Speech-to-Text.
+Converts recorded audio into text using Gemini.
 
 ### Request Body
 
 ```json
 {
-    "audioBase64": "string (required) — base64-encoded audio, recorded via MediaRecorder",
-    "languageCode": "string (required) — BCP-47 code, e.g. 'en-US'"
+    "audioBase64": "string (required) — base64-encoded audio recorded via MediaRecorder",
+    "languageCode": "string (optional) — BCP-47 language code, defaults to 'en-NZ'"
 }
 ```
 
 ### Responses
 
-- `200` — `{ "transcript": "..." }` (transcript will be `""` if the API returns no recognizable speech)
-- `400` — missing audio or language code, e.g. `{ "error": "Missing audioBase64 or languageCode" }`, or invalid JSON body: `{ "error": "Invalid JSON body" }`
-- `502` — Google Speech API call failed, `{ "error": "Speech-to-text failed" }`
+- `200` — `{ "transcript": "...", "languageCode": "..." }`
+- `400` — missing audio, `{ "error": "No audio provided" }`
+- `422` — no recognizable speech, `{ "error": "No speech could be transcribed" }`
+- `500` — Gemini speech-to-text conversion failed, `{ "error": "Speech-to-text conversion failed" }`
 
 ### Notes
 
-- Only supports `WEBM_OPUS` audio (Chrome/Firefox/Edge default). Won't work with Safari/iPad audio yet — flag with backend before wiring up iPad recording.
-- A `200` with an empty `""` transcript means no speech was detected — not an error, handle separately from `502`.
+- Audio is sent to Gemini as base64-encoded audio.
+- The endpoint expects WebM audio from the browser recorder.
+- `languageCode` identifies the spoken language.
+- The endpoint is called by the frontend through the server-side API route.
+
+---
+
+## POST /api/tts
+
+Converts text into speech using Gemini 3.1 Flash TTS.
+
+### Request Body
+
+```json
+{
+    "text": "string (required) — text to convert to speech",
+    "languageCode": "string (optional) — BCP-47 language code, defaults to 'en-NZ'"
+}
+```
+
+### Responses
+
+- `200` — WAV audio containing the generated speech.
+- `400` — missing or invalid text, `{ "error": "No text provided" }`
+- `500` — TTS generation failed, `{ "error": "Text-to-speech conversion failed" }`
+
+### Notes
+
+- Uses the `gemini-3.1-flash-tts-preview` model.
+- The generated PCM audio is converted to WAV before being returned.
+- The default voice is `Kore`.
+- The response has `Content-Type: audio/wav`.
+- The `X-Language-Code` response header contains the requested language code.
