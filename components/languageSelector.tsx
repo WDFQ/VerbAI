@@ -15,7 +15,7 @@ export default function LanguageSelector({ language, onSelect, options }: Langua
 
     return (
         <>
-            <button onClick={() => setIsOpen(true)} className="px-4 py-2 rounded-full bg-gray-700 text-white text-sm cursor-pointer">
+            <button onClick={() => setIsOpen(true)} className="px-4 py-2 rounded-full bg-gray-700 text-white text-sm cursor-pointer font-playfair-display font-medium">
                 {language ?? "Choose language..."}
             </button>
 
@@ -28,7 +28,7 @@ export default function LanguageSelector({ language, onSelect, options }: Langua
                 {/* List of languages */}
                 <div className="flex-1 overflow-y-auto">
                     {options.map((option) => (
-                        <button key={option} onClick={() => { onSelect(option); setIsOpen(false); }} className="block w-full text-left px-4 py-3 text-sm font-medium hover:bg-gray-300 cursor-pointer">
+                        <button key={option} onClick={() => { onSelect(option); setIsOpen(false); }} className="block w-full text-left px-4 py-3 text-sm font-medium hover:bg-gray-300 cursor-pointer font-playfair-display font-medium">
                             {option}
                         </button>
                     ))}
