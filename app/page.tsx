@@ -5,12 +5,14 @@ import TranslationBlock from "@/components/translationBlock";
 import { TranscriptMessage } from "@/types/transcript";
 import { useAudioRecorder, blobToBase64 } from "@/hooks/useAudioRecorder";
 import { toBcp47 } from "@/lib/languageCodes";
+import { useStatus } from "@/contexts/statusContext";
 
 export default function Home() {
     const [staffLanguage, setStaffLanguage] = useState<string | null>(null);
     const [clientLanguage, setClientLanguage] = useState<string | null>(null);
     const [activeTurn, setActiveTurn] = useState<"staff" | "client" | null>(null);
     const [messages, setMessages] = useState<TranscriptMessage[]>([]);
+    const { setStatus } = useStatus();
 
     const bothLanguagesSelected = staffLanguage != null && clientLanguage != null;
     const options = ["English", "Dari", "Swahili", "Kinyarwanda"];
@@ -55,6 +57,7 @@ export default function Home() {
             }
 
             // Call the speech to text API
+            setStatus("Getting text from speech...");
             const response = await fetch("/api/stt", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -69,6 +72,7 @@ export default function Home() {
             }
 
             // Call the translation API
+            setStatus("Translating...");
             const translationResponse = await fetch("/api/llm", {
                 method: "POST",
                 headers: { "Content-Type": "application.json" },
@@ -93,6 +97,8 @@ export default function Home() {
         } catch (error) {
             console.error("Failed to process recording:", error);
             alert("Something went wrong while processing the recording.");
+        } finally {
+            setStatus(null);
         }
     };
 
