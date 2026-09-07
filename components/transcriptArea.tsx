@@ -1,3 +1,5 @@
+import Image from "next/image";
+import SoundIcon from "../public/sound.svg";
 import { TranscriptMessage } from "@/types/transcript";
 
 type TranscriptAreaProps = {
@@ -20,6 +22,9 @@ export default function TranscriptArea({ messages, ownRole }: TranscriptAreaProp
                         <div className={`max-w-[85%] px-3 py-2 rounded-xl text-sm font-playfair-display font-bold ${isOwnSpeaker ? "bg-gray-300 text-gray-900" : "bg-gray-700 text-white"}`}>
                             {text}
                         </div>
+                        <button type="button" aria-label="Play audio" className="mt-1 mx-1.5 opacity-60 hover:opacity-100 transition-opacity cursor-pointer">
+                            <Image src={SoundIcon} alt="" width={18} height={18} />
+                        </button>
                     </div>
                 );
             })}
