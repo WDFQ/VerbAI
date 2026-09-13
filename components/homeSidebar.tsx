@@ -10,6 +10,7 @@ import {
 	SidebarMenu,
 	SidebarMenuItem
 } from "@/components/ui/sidebar";
+import Link from "next/link";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown, Plus, RotateCcwClock } from "lucide-react";
 
@@ -37,12 +38,14 @@ export function HomeSidebar() {
 
 							{/* History button */}
 							<SidebarMenuItem>
-								<SidebarMenuButton>
-									<RotateCcwClock />
-									<span className="font-playfair-display text-md font-bold">
-										History
-									</span>
-								</SidebarMenuButton>
+								<Link href="/history">
+									<SidebarMenuButton>
+										<RotateCcwClock />
+										<span className="font-playfair-display text-md font-bold">
+											History
+										</span>
+									</SidebarMenuButton>
+								</Link>
 							</SidebarMenuItem>
 						</SidebarMenu>
 					</SidebarGroupContent>
