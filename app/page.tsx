@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import TranslationBlock from "@/components/translationBlock";
+import TranscriptArea from "@/components/transcriptArea";
 import { TranscriptMessage } from "@/types/transcript";
 import { useAudioRecorder, blobToBase64 } from "@/hooks/useAudioRecorder";
 import { toBcp47 } from "@/lib/languageCodes";
@@ -156,31 +157,20 @@ export default function Home() {
                 Save session
             </button>
 
-            <div className="flex gap-4 p-4 flex-1 min-h-0">
-                {/* Staff side */}
-                <TranslationBlock 
-                    role="staff"
-                    language={staffLanguage}
-                    onLanguageChange={setStaffLanguage}
+            <div className="flex-1 min-h-0 p-4">
+                <TranslationBlock
+                    staffLanguage={staffLanguage}
+                    onStaffLanguageChange={setStaffLanguage}
+                    clientLanguage={clientLanguage}
+                    onClientLanguageChange={setClientLanguage}
                     languageOptions={options}
-                    isActive={activeTurn === "staff"}
-                    isDisabled={!bothLanguagesSelected || activeTurn === "client"}
-                    onMicTap={() => handleMicTap("staff")}
-                    messages={messages}
-                />
-
-                {/* Client side */}
-                <TranslationBlock 
-                    role="client"
-                    language={clientLanguage}
-                    onLanguageChange={setClientLanguage}
-                    languageOptions={options}
-                    isActive={activeTurn === "client"}
-                    isDisabled={!bothLanguagesSelected || activeTurn === "staff"}
-                    onMicTap={() => handleMicTap("client")}
+                    activeTurn={activeTurn}
+                    bothLanguagesSelected={bothLanguagesSelected}
+                    onMicTap={handleMicTap}
                     messages={messages}
                 />
             </div>
+            
         </div>
-    )
+    );
 }
