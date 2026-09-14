@@ -15,6 +15,32 @@ type SessionBodyShape = {
     exchanges: ExchangeShape[]
 }
 
+/**
+ * gets the entire
+ */
+export async function GET() {
+    try {
+        const snapshot = await db.collection('sessions').orderBy('createdAt', 'desc').get()
+        const sessionList = []
+
+        // loop through each conversation (session) and get their data excluding subcollection of the conversation (chat specifics)
+        for (const doc of snapshot.docs) {
+            const sessionData = doc.data()
+
+            const session = {
+                sessionId: doc.id,
+                ...sessionData,
+            }
+
+            sessionList.push(session)
+        }
+        return NextResponse.json({ sessionList }, { status: 200 })
+    } catch (error) {
+        console.error('Firestore read failed:', error)
+        return NextResponse.json({ error: 'Failed to retrieve sessions' }, { status: 502 })
+    }
+}
+
 export async function POST(req: NextRequest) {
     let body: SessionBodyShape
     try {

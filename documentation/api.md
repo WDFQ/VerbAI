@@ -32,6 +32,69 @@ Saves a completed session and its exchanges to Firestore.
 
 ---
 
+## GET /api/sessions
+
+Lists all saved sessions, most recently created first. Does not include each session's exchanges — use `GET /api/sessions/{sessionId}` to fetch a specific conversation's messages.
+
+### Responses
+
+- `200` —
+    ```json
+    {
+        "sessionList": [
+            {
+                "sessionId": "string",
+                "staffLanguage": "string",
+                "clientLanguage": "string",
+                "label": "string — e.g. '2026-09-03 — en/prs'",
+                "createdAt": "Firestore Timestamp"
+            }
+        ]
+    }
+    ```
+- `502` — Firestore read failed, `{ "error": "Failed to retrieve sessions" }`
+
+### Notes
+
+- Intended for populating a session/history list (e.g. a sidebar) without paying the cost of reading every session's exchanges subcollection.
+- Ordered by `createdAt` descending.
+
+---
+
+## GET /api/sessions/{sessionId}
+
+Retrieves a single session and its full list of exchanges, ordered by conversation order.
+
+### Responses
+
+- `200` —
+    ```json
+    {
+        "sessionId": "string",
+        "staffLanguage": "string",
+        "clientLanguage": "string",
+        "label": "string",
+        "createdAt": "Firestore Timestamp",
+        "exchanges": [
+            {
+                "speaker": "'staff' | 'client'",
+                "staffText": "string",
+                "clientText": "string",
+                "order": "number"
+            }
+        ]
+    }
+    ```
+- `404` — no session with that ID, `{ "error": "Session not found" }`
+- `502` — Firestore read failed, `{ "error": "Failed to retrieve session" }`
+
+### Notes
+
+- `exchanges` is sorted by the `order` field set when the session was saved.
+- Use this after the user selects a session from the `GET /api/sessions` list to display the full conversation.
+
+---
+
 ## POST /api/llm
 
 Translates a piece of text into a target language using Gemini Flash.
