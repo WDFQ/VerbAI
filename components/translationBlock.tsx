@@ -30,7 +30,7 @@ export default function TranslationBlock({ role, language, onLanguageChange, lan
             </div>
 
             {/* Transcript Area */}
-            <TranscriptArea messages={messages} ownRole={role} />
+            <TranscriptArea messages={messages} ownRole={role} language={language} />
 
             {/* Mic Button */}
             <button onClick={onMicTap} disabled={isDisabled} className={`flex items-center justify-center w-16 h-16 rounded-full cursor-pointer transition-colors ${
