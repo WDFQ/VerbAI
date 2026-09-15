@@ -43,6 +43,8 @@ export default function Home() {
         }
 
         // Stopping the active recording for this role
+        let messageId: string | null = null;
+
         try {
             const blob = await recorder.stop();
             setActiveTurn(null);
@@ -56,6 +58,17 @@ export default function Home() {
                 return;
             }
 
+            // Show a loading placeholder right away, before transcription finishes
+            messageId = crypto.randomUUID();
+            const newMessage: TranscriptMessage = {
+                id: messageId,
+                role,
+                originalText: null,
+                translatedText: null,
+                timestamp: new Date().toISOString(),
+            };
+            setMessages((prev) => [...prev, newMessage]);
+
             // Call the speech to text API
             setStatus("Getting text from speech...");
             const response = await fetch("/api/stt", {
@@ -68,14 +81,23 @@ export default function Home() {
 
             if (!response.ok) {
                 alert(`Transcription failed: ${data.error ?? "unknown error"}`);
+                setMessages((prev) => prev.filter((message) => message.id !== messageId));
                 return;
             }
+
+            // Show the transcribed text right away, before translation finishes
+            setMessages((prev) => prev.map((message) => {
+                if (message.id === messageId) {
+                    return { ...message, originalText: data.transcript };
+                }
+                return message;
+            }));
 
             // Call the translation API
             setStatus("Translating...");
             const translationResponse = await fetch("/api/llm", {
                 method: "POST",
-                headers: { "Content-Type": "application.json" },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ "sttText": data.transcript, "targetLanguage": role === "staff" ? clientLanguage : staffLanguage})
             })
 
@@ -86,17 +108,18 @@ export default function Home() {
 
             const translation = await translationResponse.json();
 
-            const newMessage: TranscriptMessage = {
-                id: crypto.randomUUID(),
-                role,
-                originalText: data.transcript,
-                translatedText: translation.translatedText,
-                timestamp: new Date().toISOString(),
-            };
-            setMessages((prev) => [...prev, newMessage]);
+            setMessages((prev) => prev.map((message) => {
+                if (message.id === messageId) {
+                    return { ...message, translatedText: translation.translatedText };
+                }
+                return message;
+            }));
         } catch (error) {
             console.error("Failed to process recording:", error);
             alert("Something went wrong while processing the recording.");
+            if (messageId) {
+                setMessages((prev) => prev.filter((message) => message.id !== messageId));
+            }
         } finally {
             setStatus(null);
         }

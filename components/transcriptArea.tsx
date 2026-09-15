@@ -62,20 +62,54 @@ export default function TranscriptArea({ messages, ownRole, language }: Transcri
             {messages.map((message) => {
                 const isOwnSpeaker = message.role === ownRole;
                 const isStaff = message.role === "staff";
-                const text = isOwnSpeaker ? message.originalText : message.translatedText;
+
+                let isLoading = false;
+                let text = "";
+
+                if (isOwnSpeaker) {
+                    if (message.originalText === null) {
+                        isLoading = true;
+                    } else {
+                        text = message.originalText;
+                    }
+                } else {
+                    if (message.translatedText === null) {
+                        isLoading = true;
+                    } else {
+                        text = message.translatedText;
+                    }
+                }
+
+                let messageBubble;
+                if (isLoading) {
+                    messageBubble = (
+                        <div
+                            role="status"
+                            aria-label="Loading"
+                            className="max-w-[85%] px-4 py-2 rounded-xl border-2 border-dashed border-gray-400 bg-transparent flex items-center justify-center"
+                        >
+                            <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+                        </div>
+                    );
+                } else {
+                    messageBubble = (
+                        <div className={`max-w-[85%] px-3 py-2 rounded-xl text-sm font-playfair-display font-bold ${isStaff ? "bg-gray-300 text-gray-900" : "bg-gray-700 text-white"}`}>
+                            {text}
+                        </div>
+                    );
+                }
 
                 return (
                     <div key={message.id} className={`flex flex-col ${isStaff ? "items-start" : "items-end"}`}>
                         <span className="text-[10px] text-gray-500 mb-0.5">
                             {message.role === "staff" ? "Staff" : "Client"}
                         </span>
-                        <div className={`max-w-[85%] px-3 py-2 rounded-xl text-sm font-playfair-display font-bold ${isStaff ? "bg-gray-300 text-gray-900" : "bg-gray-700 text-white"}`}>
-                            {text}
-                        </div>
+                        {messageBubble}
                         <button
                             type="button"
                             aria-label="Play audio"
-                            className="mt-1 mx-1.5 opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
+                            disabled={isLoading}
+                            className="mt-1 mx-1.5 opacity-60 hover:opacity-100 transition-opacity cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed"
                             onClick={function handlePlayAudioClick() {
                                 handleTextToSpeech(text, languageCode);
                             }}
