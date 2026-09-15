@@ -3,5 +3,6 @@ export type TranscriptMessage = {
     role: "staff" | "client";
     originalText: string | null;
     translatedText: string | null;
+    hasError: boolean;
     timestamp: string;
 };

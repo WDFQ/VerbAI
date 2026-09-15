@@ -1,5 +1,6 @@
 import Image from "next/image";
 import SoundIcon from "../public/sound.svg";
+import RetryIcon from "../public/retry.svg";
 import { TranscriptMessage } from "@/types/transcript";
 import { toBcp47 } from "@/lib/languageCodes";
 
@@ -7,6 +8,8 @@ type TranscriptAreaProps = {
     messages: TranscriptMessage[];
     ownRole: "staff" | "client";
     language: string | null;
+    onRetryTranscription: (messageId: string) => void;
+    onRetryTranslation: (messageId: string) => void;
 };
 
 async function handleTextToSpeech(text: string, languageCode: string | null): Promise<void> {
@@ -54,7 +57,7 @@ async function handleTextToSpeech(text: string, languageCode: string | null): Pr
     }
 }
 
-export default function TranscriptArea({ messages, ownRole, language }: TranscriptAreaProps) {
+export default function TranscriptArea({ messages, ownRole, language, onRetryTranscription, onRetryTranslation }: TranscriptAreaProps) {
     const languageCode = toBcp47(language);
 
     return (
@@ -64,24 +67,65 @@ export default function TranscriptArea({ messages, ownRole, language }: Transcri
                 const isStaff = message.role === "staff";
 
                 let isLoading = false;
+                let retryStage: "transcription" | "translation" | null = null;
                 let text = "";
 
                 if (isOwnSpeaker) {
                     if (message.originalText === null) {
-                        isLoading = true;
+                        if (message.hasError) {
+                            retryStage = "transcription";
+                        } else {
+                            isLoading = true;
+                        }
                     } else {
                         text = message.originalText;
                     }
                 } else {
                     if (message.translatedText === null) {
-                        isLoading = true;
+                        if (message.hasError) {
+                            if (message.originalText === null) {
+                                retryStage = "transcription";
+                            } else {
+                                retryStage = "translation";
+                            }
+                        } else {
+                            isLoading = true;
+                        }
                     } else {
                         text = message.translatedText;
                     }
                 }
 
+                const hasError = retryStage !== null;
+
                 let messageBubble;
-                if (isLoading) {
+                if (retryStage !== null) {
+                    const currentRetryStage = retryStage;
+
+                    let retryAriaLabel = "Retry transcription";
+                    if (currentRetryStage === "translation") {
+                        retryAriaLabel = "Retry translation";
+                    }
+
+                    messageBubble = (
+                        <div className="max-w-[85%] px-4 py-2 rounded-xl border-2 border-red-500 bg-transparent flex items-center justify-center">
+                            <button
+                                type="button"
+                                aria-label={retryAriaLabel}
+                                className="opacity-60 hover:opacity-100 transition-opacity cursor-pointer"
+                                onClick={function handleRetryClick() {
+                                    if (currentRetryStage === "transcription") {
+                                        onRetryTranscription(message.id);
+                                    } else {
+                                        onRetryTranslation(message.id);
+                                    }
+                                }}
+                            >
+                                <Image src={RetryIcon} alt="" width={18} height={18} />
+                            </button>
+                        </div>
+                    );
+                } else if (isLoading) {
                     messageBubble = (
                         <div
                             role="status"
@@ -108,7 +152,7 @@ export default function TranscriptArea({ messages, ownRole, language }: Transcri
                         <button
                             type="button"
                             aria-label="Play audio"
-                            disabled={isLoading}
+                            disabled={isLoading || hasError}
                             className="mt-1 mx-1.5 opacity-60 hover:opacity-100 transition-opacity cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed"
                             onClick={function handlePlayAudioClick() {
                                 handleTextToSpeech(text, languageCode);
