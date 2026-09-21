@@ -16,9 +16,11 @@ type TranslationBlockProps = {
     isDisabled: boolean;
     onMicTap: () => void;
     messages: TranscriptMessage[];
+    onRetryTranscription: (messageId: string) => void;
+    onRetryTranslation: (messageId: string) => void;
 };
 
-export default function TranslationBlock({ role, language, onLanguageChange, languageOptions, isActive, isDisabled, onMicTap, messages }: TranslationBlockProps) {
+export default function TranslationBlock({ role, language, onLanguageChange, languageOptions, isActive, isDisabled, onMicTap, messages, onRetryTranscription, onRetryTranslation }: TranslationBlockProps) {
     return (
         <div className="flex flex-col items-center bg-gray-200 rounded-2xl p-4 w-full h-full min-h-0">
             <div className="flex justify-between w-full">
@@ -30,7 +32,13 @@ export default function TranslationBlock({ role, language, onLanguageChange, lan
             </div>
 
             {/* Transcript Area */}
-            <TranscriptArea messages={messages} ownRole={role} />
+            <TranscriptArea
+                messages={messages}
+                ownRole={role}
+                language={language}
+                onRetryTranscription={onRetryTranscription}
+                onRetryTranslation={onRetryTranslation}
+            />
 
             {/* Mic Button */}
             <button onClick={onMicTap} disabled={isDisabled} className={`flex items-center justify-center w-16 h-16 rounded-full cursor-pointer transition-colors ${
