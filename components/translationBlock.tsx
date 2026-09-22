@@ -17,9 +17,11 @@ type TranslationBlockProps = {
     bothLanguagesSelected: boolean;
     onMicTap: (role: "staff" | "client") => void;
     messages: TranscriptMessage[];
+    onRetryTranscription: (messageId: string) => void;
+    onRetryTranslation: (messageId: string) => void;
 };
 
-export default function TranslationBlock({ staffLanguage, onStaffLanguageChange, clientLanguage, onClientLanguageChange, languageOptions, activeTurn, bothLanguagesSelected, onMicTap, messages }: TranslationBlockProps) {
+export default function TranslationBlock({ staffLanguage, onStaffLanguageChange, clientLanguage, onClientLanguageChange, languageOptions, activeTurn, bothLanguagesSelected, onMicTap, messages, onRetryTranscription, onRetryTranslation }: TranslationBlockProps) {
     return (
         <div className="flex flex-col bg-gray-200 rounded-2xl p-4 w-full h-full min-h-0">
             <div className="flex justify-between w-full">
@@ -36,7 +38,13 @@ export default function TranslationBlock({ staffLanguage, onStaffLanguageChange,
             </div>
 
             {/* Shared transcript area */}
-            <TranscriptArea messages={messages} />
+            <TranscriptArea
+                messages={messages}
+                staffLanguage={staffLanguage}
+                clientLanguage={clientLanguage}
+                onRetryTranscription={onRetryTranscription}
+                onRetryTranslation={onRetryTranslation}
+            />
 
             {/* Mic buttons */}
             <div className="flex justify-around">

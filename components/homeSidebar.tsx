@@ -28,12 +28,14 @@ export function HomeSidebar() {
 						<SidebarMenu>
 							{/* New session button */}
 							<SidebarMenuItem>
-								<SidebarMenuButton>
-									<Plus />
-									<span className="font-playfair-display text-md font-bold">
-										New Session
-									</span>
-								</SidebarMenuButton>
+								<a href="/">
+									<SidebarMenuButton>
+										<Plus />
+										<span className="font-playfair-display text-md font-bold cursor-pointer">
+											New Session
+										</span>
+									</SidebarMenuButton>
+								</a>
 							</SidebarMenuItem>
 
 							{/* History button */}
@@ -41,7 +43,7 @@ export function HomeSidebar() {
 								<Link href="/history">
 									<SidebarMenuButton>
 										<RotateCcwClock />
-										<span className="font-playfair-display text-md font-bold">
+										<span className="font-playfair-display text-md font-bold cursor-pointer">
 											History
 										</span>
 									</SidebarMenuButton>

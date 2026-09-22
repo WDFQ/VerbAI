@@ -15,6 +15,33 @@ type SessionBodyShape = {
     exchanges: ExchangeShape[]
 }
 
+/**
+ * gets the entire
+ */
+export async function GET() {
+    try {
+        const snapshot = await db.collection('sessions').orderBy('createdAt', 'desc').get()
+        const sessionList = []
+
+        // loop through each conversation (session) and get their data excluding subcollection of the conversation (chat specifics)
+        for (const doc of snapshot.docs) {
+            const sessionData = doc.data()
+
+            const session = {
+                sessionId: doc.id,
+                ...sessionData,
+                createdAt: sessionData.createdAt?.toDate().toISOString() ?? null,
+            }
+
+            sessionList.push(session)
+        }
+        return NextResponse.json({ sessionList }, { status: 200 })
+    } catch (error) {
+        console.error('Firestore read failed:', error)
+        return NextResponse.json({ error: 'Failed to retrieve sessions' }, { status: 502 })
+    }
+}
+
 export async function POST(req: NextRequest) {
     let body: SessionBodyShape
     try {
@@ -26,7 +53,7 @@ export async function POST(req: NextRequest) {
     const { sessionId, staffLanguage, clientLanguage, exchanges } = body
 
     if (!sessionId || !staffLanguage || !clientLanguage || !Array.isArray(exchanges) || exchanges.length === 0) {
-        return NextResponse.json({ error: 'Missing, staffLanguage, clientLanguage, or exchanges' }, { status: 400 })
+        return NextResponse.json({ error: 'Missing sessionId, staffLanguage, clientLanguage, or exchanges' }, { status: 400 })
     }
 
     for (const exchange of exchanges) {

@@ -32,6 +32,69 @@ Saves a completed session and its exchanges to Firestore.
 
 ---
 
+## GET /api/sessions
+
+Lists all saved sessions, most recently created first. Does not include each session's exchanges — use `GET /api/sessions/{sessionId}` to fetch a specific conversation's messages.
+
+### Responses
+
+- `200` —
+    ```json
+    {
+        "sessionList": [
+            {
+                "sessionId": "string",
+                "staffLanguage": "string",
+                "clientLanguage": "string",
+                "label": "string — e.g. '2026-09-03 — en/prs'",
+                "createdAt": "Firestore Timestamp"
+            }
+        ]
+    }
+    ```
+- `502` — Firestore read failed, `{ "error": "Failed to retrieve sessions" }`
+
+### Notes
+
+- Intended for populating a session/history list (e.g. a sidebar) without paying the cost of reading every session's exchanges subcollection.
+- Ordered by `createdAt` descending.
+
+---
+
+## GET /api/sessions/{sessionId}
+
+Retrieves a single session and its full list of exchanges, ordered by conversation order.
+
+### Responses
+
+- `200` —
+    ```json
+    {
+        "sessionId": "string",
+        "staffLanguage": "string",
+        "clientLanguage": "string",
+        "label": "string",
+        "createdAt": "Firestore Timestamp",
+        "exchanges": [
+            {
+                "speaker": "'staff' | 'client'",
+                "staffText": "string",
+                "clientText": "string",
+                "order": "number"
+            }
+        ]
+    }
+    ```
+- `404` — no session with that ID, `{ "error": "Session not found" }`
+- `502` — Firestore read failed, `{ "error": "Failed to retrieve session" }`
+
+### Notes
+
+- `exchanges` is sorted by the `order` field set when the session was saved.
+- Use this after the user selects a session from the `GET /api/sessions` list to display the full conversation.
+
+---
+
 ## POST /api/llm
 
 Translates a piece of text into a target language using Gemini Flash.
@@ -60,36 +123,37 @@ Translates a piece of text into a target language using Gemini Flash.
 
 ## POST /api/stt
 
-Converts recorded audio into text using Gemini.
+Converts recorded audio into text using Google Cloud Speech-to-Text.
 
 ### Request Body
 
 ```json
 {
     "audioBase64": "string (required) — base64-encoded audio recorded via MediaRecorder",
-    "languageCode": "string (optional) — BCP-47 language code, defaults to 'en-NZ'"
+    "languageCode": "string (required) — BCP-47 language code, e.g. 'en-NZ'"
 }
 ```
 
 ### Responses
 
-- `200` — `{ "transcript": "...", "languageCode": "..." }`
-- `400` — missing audio, `{ "error": "No audio provided" }`
-- `422` — no recognizable speech, `{ "error": "No speech could be transcribed" }`
-- `500` — Gemini speech-to-text conversion failed, `{ "error": "Speech-to-text conversion failed" }`
+- `200` — `{ "transcript" }`
+- `400` — missing audio, `{ "error": "Missing audioBase64 or languageCode" }, or invalid JSON body: { "error": "Invalid JSON body" }`
+- `502` — Google Speech-to-Text API call failed, `{ "error": "Speech-to-text failed" }`
 
 ### Notes
 
-- Audio is sent to Gemini as base64-encoded audio.
-- The endpoint expects WebM audio from the browser recorder.
-- `languageCode` identifies the spoken language.
+- Audio is sent to Google Cloud Speech-to-Text using the Google Speech REST API.
+- The endpoint expects WEBM_OPUS audio from the browser recorder.
+- The audio is configured with a sample rate of 48000 Hz.
+languageCode identifies the spoken language using a BCP-47 language code.
 - The endpoint is called by the frontend through the server-side API route.
+- A successful response may contain an empty transcript if no recognizable speech is returned.
 
 ---
 
 ## POST /api/tts
 
-Converts text into speech using Gemini 3.1 Flash TTS.
+Converts text into speech using Google Cloud Text-to-Speech.
 
 ### Request Body
 
@@ -102,14 +166,15 @@ Converts text into speech using Gemini 3.1 Flash TTS.
 
 ### Responses
 
-- `200` — WAV audio containing the generated speech.
-- `400` — missing or invalid text, `{ "error": "No text provided" }`
-- `500` — TTS generation failed, `{ "error": "Text-to-speech conversion failed" }`
+- 200 — MP3 audio containing the generated speech.
+- 400 — missing or invalid text, `{ "error": "No text provided" }`, or invalid JSON body: `{ "error": "Invalid JSON body" }`
+- 502 — Google Text-to-Speech API call failed, `{ "error": "Text-to-speech failed" }`
 
 ### Notes
 
-- Uses the `gemini-3.1-flash-tts-preview` model.
-- The generated PCM audio is converted to WAV before being returned.
-- The default voice is `Kore`.
-- The response has `Content-Type: audio/wav`.
-- The `X-Language-Code` response header contains the requested language code.
+- Text is sent to Google Cloud Text-to-Speech using the Google Text-to-Speech REST API.
+- The requested languageCode is passed to the Google TTS API.
+- The generated audio is returned as MP3.
+- The response has Content-Type: audio/mpeg.
+- The X-Language-Code response header contains the requested language code.
+- The endpoint is called by the frontend through the server-side API route.

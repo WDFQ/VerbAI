@@ -1,12 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import TranslationBlock from "@/components/translationBlock";
-import TranscriptArea from "@/components/transcriptArea";
 import { TranscriptMessage } from "@/types/transcript";
 import { useAudioRecorder, blobToBase64 } from "@/hooks/useAudioRecorder";
 import { toBcp47 } from "@/lib/languageCodes";
 import { useStatus } from "@/contexts/statusContext";
+import { Save } from "lucide-react";
+import SaveSessionPopup from "@/components/saveSessionPopup";
+
+type RecordingData = {
+    audioBase64: string;
+    languageCode: string;
+};
 
 export default function Home() {
     const [staffLanguage, setStaffLanguage] = useState<string | null>(null);
@@ -15,10 +21,157 @@ export default function Home() {
     const [messages, setMessages] = useState<TranscriptMessage[]>([]);
     const { setStatus } = useStatus();
 
+    const [showSavePopup, setShowSavePopup] = useState(false);
+
     const bothLanguagesSelected = staffLanguage != null && clientLanguage != null;
     const options = ["English", "Dari", "Swahili", "Kinyarwanda"];
 
     const recorder = useAudioRecorder();
+
+    // Keeps the recorded audio for each message around so a failed transcription can be retried
+    const recordingDataByMessageId = useRef<Map<string, RecordingData>>(new Map());
+
+    function markMessageAsErrored(messageId: string) {
+        setMessages((prev) => prev.map((message) => {
+            if (message.id === messageId) {
+                return { ...message, hasError: true };
+            }
+            return message;
+        }));
+    }
+
+    function clearMessageError(messageId: string) {
+        setMessages((prev) => prev.map((message) => {
+            if (message.id === messageId) {
+                return { ...message, hasError: false };
+            }
+            return message;
+        }));
+    }
+
+    async function runTranslation(role: "staff" | "client", messageId: string, sttText: string) {
+        try {
+            setStatus("Translating...");
+            clearMessageError(messageId);
+            const targetLanguage = role === "staff" ? clientLanguage : staffLanguage;
+            const translationResponse = await fetch("/api/llm", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ "sttText": sttText, "targetLanguage": targetLanguage })
+            });
+
+            if (!translationResponse.ok) {
+                const errorData = await translationResponse.json();
+                alert(`Translation failed: ${errorData.error ?? "unknown error"}`);
+                markMessageAsErrored(messageId);
+                return;
+            }
+
+            const translation = await translationResponse.json();
+
+            setMessages((prev) => prev.map((message) => {
+                if (message.id === messageId) {
+                    return { ...message, translatedText: translation.translatedText, hasError: false };
+                }
+                return message;
+            }));
+        } catch (error) {
+            console.error("Failed to translate message:", error);
+            alert("Something went wrong while translating.");
+            markMessageAsErrored(messageId);
+        } finally {
+            setStatus(null);
+        }
+    }
+
+    async function runTranscription(role: "staff" | "client", messageId: string, audioBase64: string, languageCode: string) {
+        try {
+            setStatus("Getting text from speech...");
+            clearMessageError(messageId);
+            const response = await fetch("/api/stt", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ audioBase64, languageCode }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                alert(`Transcription failed: ${data.error ?? "unknown error"}`);
+                markMessageAsErrored(messageId);
+                return;
+            }
+
+            if (!data.transcript || data.transcript.trim() === "") {
+                alert("No speech detected. Please try again.");
+                setMessages((prev) => prev.filter((message) => message.id !== messageId));
+                recordingDataByMessageId.current.delete(messageId);
+                return;
+            }
+
+            // Show the transcribed text right away, before translation finishes
+            setMessages((prev) => prev.map((message) => {
+                if (message.id === messageId) {
+                    return { ...message, originalText: data.transcript, hasError: false };
+                }
+                return message;
+            }));
+
+            await runTranslation(role, messageId, data.transcript);
+        } catch (error) {
+            console.error("Failed to transcribe recording:", error);
+            alert("Something went wrong while transcribing.");
+            markMessageAsErrored(messageId);
+        } finally {
+            setStatus(null);
+        }
+    }
+
+    //TESTING SAVING (DELETE)
+    const loadMockMessages = () => {
+        setStaffLanguage("English");
+        setClientLanguage("Dari");
+        setMessages([
+            {
+                id: crypto.randomUUID(),
+                role: "staff",
+                originalText: "Hi, how are you today?",
+                translatedText: "سلام، امروز چطور هستید؟",
+                hasError: false,
+                timestamp: new Date().toISOString(),
+            },
+            {
+                id: crypto.randomUUID(),
+                role: "client",
+                originalText: "من به کمک برای درخواست ویزای خود نیاز دارم.",
+                translatedText: "I need help with my visa application.",
+                hasError: false,
+                timestamp: new Date().toISOString(),
+            },
+        ]);
+    };
+
+    async function handleRetryTranscription(messageId: string) {
+        const recordingData = recordingDataByMessageId.current.get(messageId);
+        const message = messages.find((message) => message.id === messageId);
+
+        if (!recordingData || !message) {
+            alert("Unable to retry: the original recording is no longer available.");
+            return;
+        }
+
+        await runTranscription(message.role, messageId, recordingData.audioBase64, recordingData.languageCode);
+    }
+
+    async function handleRetryTranslation(messageId: string) {
+        const message = messages.find((message) => message.id === messageId);
+
+        if (!message || message.originalText === null) {
+            return;
+        }
+
+        await runTranslation(message.role, messageId, message.originalText);
+    }
 
     const handleMicTap = async (role: "staff" | "client") => {
         if (activeTurn === null) {
@@ -57,53 +210,27 @@ export default function Home() {
                 return;
             }
 
-            // Call the speech to text API
-            setStatus("Getting text from speech...");
-            const response = await fetch("/api/stt", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ audioBase64, languageCode }),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                alert(`Transcription failed: ${data.error ?? "unknown error"}`);
-                return;
-            }
-
-            // Call the translation API
-            setStatus("Translating...");
-            const translationResponse = await fetch("/api/llm", {
-                method: "POST",
-                headers: { "Content-Type": "application.json" },
-                body: JSON.stringify({ "sttText": data.transcript, "targetLanguage": role === "staff" ? clientLanguage : staffLanguage})
-            })
-
-            if (!translationResponse.ok) {
-                alert(`Translation failed: ${data.error ?? "unknown error"}`);
-                return;
-            }
-
-            const translation = await translationResponse.json();
-
+            // Show a loading placeholder right away, before transcription finishes
+            const messageId = crypto.randomUUID();
             const newMessage: TranscriptMessage = {
-                id: crypto.randomUUID(),
+                id: messageId,
                 role,
-                originalText: data.transcript,
-                translatedText: translation.translatedText,
+                originalText: null,
+                translatedText: null,
+                hasError: false,
                 timestamp: new Date().toISOString(),
             };
             setMessages((prev) => [...prev, newMessage]);
+            recordingDataByMessageId.current.set(messageId, { audioBase64, languageCode });
+
+            await runTranscription(role, messageId, audioBase64, languageCode);
         } catch (error) {
             console.error("Failed to process recording:", error);
             alert("Something went wrong while processing the recording.");
-        } finally {
-            setStatus(null);
         }
     };
 
-    const handleSaveSession = async () => {
+    const handleSaveSession = async (label: string) => {
         const payload = {
             sessionId: crypto.randomUUID(),
             staffLanguage,
@@ -114,6 +241,10 @@ export default function Home() {
                 clientText: m.role === "client" ? m.originalText : m.translatedText
             })),
         };
+
+        //DEBUGGING
+        console.log("Saving session with payload:", payload);
+
         try {
             const response = await fetch("/api/sessions", {
                 method: "POST",
@@ -150,12 +281,34 @@ export default function Home() {
         }
     };
 
+    // Generates a default label for the session based on the current date and time
+    const generateDefaultLabel = () => {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString("en-NZ", { day: "numeric", month: "short", year: "numeric" });
+        return `${dateStr} — ${staffLanguage}/${clientLanguage}`;
+    };
+
     return (
         <div className="flex flex-col h-full">
             {/* Save button */}
-            <button onClick={handleSaveSession} className="px-4 py-2 m-2 rounded bg-white border border-deep-pink text-black rounded cursor-pointer font-playfair-display font-bold">
+            <button onClick={() => setShowSavePopup(true)} className="px-4 py-2 m-2 rounded bg-white border border-deep-pink text-black rounded cursor-pointer font-playfair-display font-bold">
                 Save session
             </button>
+
+            {/* Popup for saving the session */}
+            <SaveSessionPopup
+                isOpen={showSavePopup}
+                onClose={() => setShowSavePopup(false)}
+                defaultLabel={generateDefaultLabel()}
+                onSave={handleSaveSession}
+            />
+
+            {/* TESTING SAVING (DELETE) */}
+            {process.env.NODE_ENV === "development" && (
+                <button onClick={loadMockMessages} className="px-4 py-2 m-2 rounded bg-yellow-200 text-black rounded cursor-pointer font-playfair-display font-bold">
+                    Load Mock Data (dev only)
+                </button>
+            )}
 
             <div className="flex-1 min-h-0 p-4">
                 <TranslationBlock
@@ -168,9 +321,10 @@ export default function Home() {
                     bothLanguagesSelected={bothLanguagesSelected}
                     onMicTap={handleMicTap}
                     messages={messages}
+                    onRetryTranscription={handleRetryTranscription}
+                    onRetryTranslation={handleRetryTranslation}
                 />
             </div>
-            
         </div>
     );
 }
