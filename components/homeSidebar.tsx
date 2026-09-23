@@ -1,3 +1,5 @@
+"use client";
+
 import {
 	Sidebar,
 	SidebarContent,
@@ -11,9 +13,12 @@ import {
 	SidebarMenuItem
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, Plus, RotateCcwClock } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { ChevronDown, Plus, RotateCcwClock, Settings } from "lucide-react";
+import { useTheme } from "@/contexts/themeContext";
 
 export function HomeSidebar() {
+	const { theme, toggleTheme } = useTheme();
 	return (
 		<Sidebar>
 			<SidebarHeader>
@@ -51,15 +56,27 @@ export function HomeSidebar() {
 				{/* Settings */}
 				<Collapsible className="group/collapsible">
 					<SidebarGroup>
-						<SidebarGroupLabel render={<CollapsibleTrigger />}>
-							<h2 className="font-playfair-display text-lg font-bold px-2">
+						<SidebarGroupLabel render={<CollapsibleTrigger />} className="gap-2">
+							<Settings />
+							<h2 className="font-playfair-display text-lg font-bold">
 								Settings
 							</h2>
 							<ChevronDown className="ml-auto transition-transform group-data-open/collapsible:rotate-180" />
 						</SidebarGroupLabel>
 						<CollapsibleContent>
-							<p>settings 1</p>
-							<p>settings 2</p>
+							<div className="flex items-center justify-between gap-2 pl-10 pr-2 py-1.5">
+								<label
+									htmlFor="dark-mode-switch"
+									className="font-playfair-display text-md font-bold"
+								>
+									Dark Mode
+								</label>
+								<Switch
+									id="dark-mode-switch"
+									checked={theme === "dark"}
+									onCheckedChange={toggleTheme}
+								/>
+							</div>
 						</CollapsibleContent>
 					</SidebarGroup>
 				</Collapsible>

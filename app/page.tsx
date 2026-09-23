@@ -252,7 +252,7 @@ export default function Home() {
     return (
         <div className="flex flex-col h-full">
             {/* Save button */}
-            <button onClick={handleSaveSession} className="px-4 py-2 m-2 rounded bg-white border border-deep-pink text-black rounded cursor-pointer font-playfair-display font-bold">
+            <button onClick={handleSaveSession} className="px-4 py-2 m-2 rounded bg-white dark:bg-black border border-deep-pink text-black dark:text-white rounded cursor-pointer font-playfair-display font-bold">
                 Save session
             </button>
 

@@ -158,7 +158,7 @@ export default function TranscriptArea({ messages, ownRole, language, onRetryTra
                                 handleTextToSpeech(text, languageCode);
                             }}
                         >
-                            <Image src={SoundIcon} alt="" width={18} height={18} />
+                            <Image src={SoundIcon} alt="" width={18} height={18} className="dark:invert" />
                         </button>
                     </div>
                 );

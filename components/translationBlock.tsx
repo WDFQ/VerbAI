@@ -22,7 +22,7 @@ type TranslationBlockProps = {
 
 export default function TranslationBlock({ role, language, onLanguageChange, languageOptions, isActive, isDisabled, onMicTap, messages, onRetryTranscription, onRetryTranslation }: TranslationBlockProps) {
     return (
-        <div className="flex flex-col items-center bg-gray-200 rounded-2xl p-4 w-full h-full min-h-0">
+        <div className="flex flex-col items-center bg-gray-200 dark:bg-card rounded-2xl p-4 w-full h-full min-h-0">
             <div className="flex justify-between w-full">
                 {/* Label */}
                 <h1 className="font-playfair-display font-bold">{role.charAt(0).toUpperCase() + role.slice(1).toLowerCase()}</h1>
