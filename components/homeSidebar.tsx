@@ -12,6 +12,7 @@ import {
 	SidebarMenu,
 	SidebarMenuItem
 } from "@/components/ui/sidebar";
+import Link from "next/link";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Switch } from "@/components/ui/switch";
 import { ChevronDown, Plus, RotateCcwClock, Settings } from "lucide-react";
@@ -32,22 +33,26 @@ export function HomeSidebar() {
 						<SidebarMenu>
 							{/* New session button */}
 							<SidebarMenuItem>
-								<SidebarMenuButton>
-									<Plus />
-									<span className="font-playfair-display text-md font-bold">
-										New Session
-									</span>
-								</SidebarMenuButton>
+								<a href="/">
+									<SidebarMenuButton>
+										<Plus />
+										<span className="font-playfair-display text-md font-bold cursor-pointer">
+											New Session
+										</span>
+									</SidebarMenuButton>
+								</a>
 							</SidebarMenuItem>
 
 							{/* History button */}
 							<SidebarMenuItem>
-								<SidebarMenuButton>
-									<RotateCcwClock />
-									<span className="font-playfair-display text-md font-bold">
-										History
-									</span>
-								</SidebarMenuButton>
+								<Link href="/history">
+									<SidebarMenuButton>
+										<RotateCcwClock />
+										<span className="font-playfair-display text-md font-bold cursor-pointer">
+											History
+										</span>
+									</SidebarMenuButton>
+								</Link>
 							</SidebarMenuItem>
 						</SidebarMenu>
 					</SidebarGroupContent>
