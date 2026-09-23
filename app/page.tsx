@@ -6,6 +6,8 @@ import { TranscriptMessage } from "@/types/transcript";
 import { useAudioRecorder, blobToBase64 } from "@/hooks/useAudioRecorder";
 import { toBcp47 } from "@/lib/languageCodes";
 import { useStatus } from "@/contexts/statusContext";
+import { Save } from "lucide-react";
+import SaveSessionPopup from "@/components/saveSessionPopup";
 
 type RecordingData = {
     audioBase64: string;
@@ -18,6 +20,8 @@ export default function Home() {
     const [activeTurn, setActiveTurn] = useState<"staff" | "client" | null>(null);
     const [messages, setMessages] = useState<TranscriptMessage[]>([]);
     const { setStatus } = useStatus();
+
+    const [showSavePopup, setShowSavePopup] = useState(false);
 
     const bothLanguagesSelected = staffLanguage != null && clientLanguage != null;
     const options = ["English", "Dari", "Swahili", "Kinyarwanda"];
@@ -123,6 +127,30 @@ export default function Home() {
         }
     }
 
+    //TESTING SAVING (DELETE)
+    const loadMockMessages = () => {
+        setStaffLanguage("English");
+        setClientLanguage("Dari");
+        setMessages([
+            {
+                id: crypto.randomUUID(),
+                role: "staff",
+                originalText: "Hi, how are you today?",
+                translatedText: "سلام، امروز چطور هستید؟",
+                hasError: false,
+                timestamp: new Date().toISOString(),
+            },
+            {
+                id: crypto.randomUUID(),
+                role: "client",
+                originalText: "من به کمک برای درخواست ویزای خود نیاز دارم.",
+                translatedText: "I need help with my visa application.",
+                hasError: false,
+                timestamp: new Date().toISOString(),
+            },
+        ]);
+    };
+
     async function handleRetryTranscription(messageId: string) {
         const recordingData = recordingDataByMessageId.current.get(messageId);
         const message = messages.find((message) => message.id === messageId);
@@ -202,7 +230,7 @@ export default function Home() {
         }
     };
 
-    const handleSaveSession = async () => {
+    const handleSaveSession = async (label: string) => {
         const payload = {
             sessionId: crypto.randomUUID(),
             staffLanguage,
@@ -213,6 +241,10 @@ export default function Home() {
                 clientText: m.role === "client" ? m.originalText : m.translatedText
             })),
         };
+
+        //DEBUGGING
+        console.log("Saving session with payload:", payload);
+
         try {
             const response = await fetch("/api/sessions", {
                 method: "POST",
@@ -249,42 +281,50 @@ export default function Home() {
         }
     };
 
+    // Generates a default label for the session based on the current date and time
+    const generateDefaultLabel = () => {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString("en-NZ", { day: "numeric", month: "short", year: "numeric" });
+        return `${dateStr} — ${staffLanguage}/${clientLanguage}`;
+    };
+
     return (
         <div className="flex flex-col h-full">
             {/* Save button */}
-            <button onClick={handleSaveSession} className="px-4 py-2 m-2 rounded bg-white border border-deep-pink text-black rounded cursor-pointer font-playfair-display font-bold">
+            <button onClick={() => setShowSavePopup(true)} className="px-4 py-2 m-2 rounded bg-white border border-deep-pink text-black rounded cursor-pointer font-playfair-display font-bold">
                 Save session
             </button>
 
-            <div className="flex gap-4 p-4 flex-1 min-h-0">
-                {/* Staff side */}
-                <TranslationBlock 
-                    role="staff"
-                    language={staffLanguage}
-                    onLanguageChange={setStaffLanguage}
-                    languageOptions={options}
-                    isActive={activeTurn === "staff"}
-                    isDisabled={!bothLanguagesSelected || activeTurn === "client"}
-                    onMicTap={() => handleMicTap("staff")}
-                    messages={messages}
-                    onRetryTranscription={handleRetryTranscription}
-                    onRetryTranslation={handleRetryTranslation}
-                />
+            {/* Popup for saving the session */}
+            <SaveSessionPopup
+                isOpen={showSavePopup}
+                onClose={() => setShowSavePopup(false)}
+                defaultLabel={generateDefaultLabel()}
+                onSave={handleSaveSession}
+            />
 
-                {/* Client side */}
-                <TranslationBlock 
-                    role="client"
-                    language={clientLanguage}
-                    onLanguageChange={setClientLanguage}
+            {/* TESTING SAVING (DELETE) */}
+            {process.env.NODE_ENV === "development" && (
+                <button onClick={loadMockMessages} className="px-4 py-2 m-2 rounded bg-yellow-200 text-black rounded cursor-pointer font-playfair-display font-bold">
+                    Load Mock Data (dev only)
+                </button>
+            )}
+
+            <div className="flex-1 min-h-0 p-4">
+                <TranslationBlock
+                    staffLanguage={staffLanguage}
+                    onStaffLanguageChange={setStaffLanguage}
+                    clientLanguage={clientLanguage}
+                    onClientLanguageChange={setClientLanguage}
                     languageOptions={options}
-                    isActive={activeTurn === "client"}
-                    isDisabled={!bothLanguagesSelected || activeTurn === "staff"}
-                    onMicTap={() => handleMicTap("client")}
+                    activeTurn={activeTurn}
+                    bothLanguagesSelected={bothLanguagesSelected}
+                    onMicTap={handleMicTap}
                     messages={messages}
                     onRetryTranscription={handleRetryTranscription}
                     onRetryTranslation={handleRetryTranslation}
                 />
             </div>
         </div>
-    )
+    );
 }

@@ -6,8 +6,8 @@ import { toBcp47 } from "@/lib/languageCodes";
 
 type TranscriptAreaProps = {
     messages: TranscriptMessage[];
-    ownRole: "staff" | "client";
-    language: string | null;
+    staffLanguage: string | null;
+    clientLanguage: string | null;
     onRetryTranscription: (messageId: string) => void;
     onRetryTranslation: (messageId: string) => void;
 };
@@ -57,48 +57,35 @@ async function handleTextToSpeech(text: string, languageCode: string | null): Pr
     }
 }
 
-export default function TranscriptArea({ messages, ownRole, language, onRetryTranscription, onRetryTranslation }: TranscriptAreaProps) {
-    const languageCode = toBcp47(language);
-
+export default function TranscriptArea({ messages, staffLanguage, clientLanguage, onRetryTranscription, onRetryTranslation }: TranscriptAreaProps) {
     return (
         <div className="flex-1 w-full min-h-0 overflow-y-auto p-3 space-y-3">
             {messages.map((message) => {
-                const isOwnSpeaker = message.role === ownRole;
                 const isStaff = message.role === "staff";
+                const messageLanguage = isStaff ? staffLanguage : clientLanguage;
+                const languageCode = toBcp47(messageLanguage);
 
                 let isLoading = false;
                 let retryStage: "transcription" | "translation" | null = null;
-                let text = "";
-
-                if (isOwnSpeaker) {
-                    if (message.originalText === null) {
-                        if (message.hasError) {
-                            retryStage = "transcription";
-                        } else {
-                            isLoading = true;
-                        }
+            
+                if (message.originalText === null) {
+                    if (message.hasError) {
+                        retryStage = "transcription";
                     } else {
-                        text = message.originalText;
+                        isLoading = true;
                     }
-                } else {
-                    if (message.translatedText === null) {
-                        if (message.hasError) {
-                            if (message.originalText === null) {
-                                retryStage = "transcription";
-                            } else {
-                                retryStage = "translation";
-                            }
-                        } else {
-                            isLoading = true;
-                        }
+                } else if (message.translatedText === null) {
+                    if (message.hasError) {
+                        retryStage = "translation";
                     } else {
-                        text = message.translatedText;
+                        isLoading = true;
                     }
                 }
 
                 const hasError = retryStage !== null;
 
                 let messageBubble;
+                
                 if (retryStage !== null) {
                     const currentRetryStage = retryStage;
 
@@ -138,7 +125,13 @@ export default function TranscriptArea({ messages, ownRole, language, onRetryTra
                 } else {
                     messageBubble = (
                         <div className={`max-w-[85%] px-3 py-2 rounded-xl text-sm font-playfair-display font-bold ${isStaff ? "bg-gray-300 text-gray-900" : "bg-gray-700 text-white"}`}>
-                            {text}
+                            <div>
+                                {message.originalText}
+                            </div>
+
+                            <div className="opacity-70 text-xs mt-1">
+                                {message.translatedText}
+                            </div>
                         </div>
                     );
                 }
@@ -155,7 +148,7 @@ export default function TranscriptArea({ messages, ownRole, language, onRetryTra
                             disabled={isLoading || hasError}
                             className="mt-1 mx-1.5 opacity-60 hover:opacity-100 transition-opacity cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed"
                             onClick={function handlePlayAudioClick() {
-                                handleTextToSpeech(text, languageCode);
+                                handleTextToSpeech(message.originalText ?? "", languageCode);
                             }}
                         >
                             <Image src={SoundIcon} alt="" width={18} height={18} />

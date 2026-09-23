@@ -30,6 +30,7 @@ export async function GET() {
             const session = {
                 sessionId: doc.id,
                 ...sessionData,
+                createdAt: sessionData.createdAt?.toDate().toISOString() ?? null,
             }
 
             sessionList.push(session)
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
     const { sessionId, staffLanguage, clientLanguage, exchanges } = body
 
     if (!sessionId || !staffLanguage || !clientLanguage || !Array.isArray(exchanges) || exchanges.length === 0) {
-        return NextResponse.json({ error: 'Missing, staffLanguage, clientLanguage, or exchanges' }, { status: 400 })
+        return NextResponse.json({ error: 'Missing sessionId, staffLanguage, clientLanguage, or exchanges' }, { status: 400 })
     }
 
     for (const exchange of exchanges) {
