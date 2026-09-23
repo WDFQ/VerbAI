@@ -151,7 +151,7 @@ export default function TranscriptArea({ messages, staffLanguage, clientLanguage
                                 handleTextToSpeech(message.originalText ?? "", languageCode);
                             }}
                         >
-                            <Image src={SoundIcon} alt="" width={18} height={18} />
+                            <Image src={SoundIcon} alt="" width={18} height={18} className="dark:invert" />
                         </button>
                     </div>
                 );

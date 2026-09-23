@@ -291,7 +291,11 @@ export default function Home() {
     return (
         <div className="flex flex-col h-full">
             {/* Save button */}
-            <button onClick={() => setShowSavePopup(true)} className="px-4 py-2 m-2 rounded bg-white border border-deep-pink text-black rounded cursor-pointer font-playfair-display font-bold">
+            <button
+                onClick={() => setShowSavePopup(true)}
+                className="flex items-center justify-center gap-2 px-4 py-2 m-2 rounded-lg bg-white dark:bg-card border border-deep-pink text-black dark:text-white cursor-pointer font-playfair-display font-bold transition-colors duration-150 hover:bg-deep-pink hover:text-white dark:hover:bg-deep-pink dark:hover:text-white"
+            >
+                <Save className="size-4" />
                 Save session
             </button>
 

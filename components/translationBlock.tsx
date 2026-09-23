@@ -23,7 +23,7 @@ type TranslationBlockProps = {
 
 export default function TranslationBlock({ staffLanguage, onStaffLanguageChange, clientLanguage, onClientLanguageChange, languageOptions, activeTurn, bothLanguagesSelected, onMicTap, messages, onRetryTranscription, onRetryTranslation }: TranslationBlockProps) {
     return (
-        <div className="flex flex-col bg-gray-200 rounded-2xl p-4 w-full h-full min-h-0">
+        <div className="flex flex-col bg-gray-200 dark:bg-card rounded-2xl p-4 w-full h-full min-h-0">
             <div className="flex justify-between w-full">
                 {/* Language selectors */}
                 <div className="flex items-center gap-2">
