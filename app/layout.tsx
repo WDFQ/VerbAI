@@ -37,7 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 			<body className="h-screen flex flex-col overflow-hidden">
 				<ThemeProvider>
 					<StatusProvider>
-						<SidebarProvider>
+						<SidebarProvider defaultOpen={false}>
 							<HomeSidebar />
 							<div className="flex flex-col flex-1 min-h-0">
 								<Navbar />
