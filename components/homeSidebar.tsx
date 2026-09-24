@@ -34,9 +34,9 @@ export function HomeSidebar() {
 							{/* New session button */}
 							<SidebarMenuItem>
 								<a href="/">
-									<SidebarMenuButton>
+									<SidebarMenuButton className="cursor-pointer">
 										<Plus />
-										<span className="font-playfair-display text-md font-bold cursor-pointer">
+										<span className="font-playfair-display text-md font-bold">
 											New Session
 										</span>
 									</SidebarMenuButton>
@@ -46,9 +46,9 @@ export function HomeSidebar() {
 							{/* History button */}
 							<SidebarMenuItem>
 								<Link href="/history">
-									<SidebarMenuButton>
+									<SidebarMenuButton className="cursor-pointer">
 										<RotateCcwClock />
-										<span className="font-playfair-display text-md font-bold cursor-pointer">
+										<span className="font-playfair-display text-md font-bold">
 											History
 										</span>
 									</SidebarMenuButton>
@@ -61,7 +61,7 @@ export function HomeSidebar() {
 				{/* Settings */}
 				<Collapsible className="group/collapsible">
 					<SidebarGroup>
-						<SidebarGroupLabel render={<CollapsibleTrigger />} className="gap-2">
+						<SidebarGroupLabel render={<CollapsibleTrigger />} className="gap-2 cursor-pointer">
 							<Settings />
 							<h2 className="font-playfair-display text-lg font-bold">
 								Settings
@@ -80,6 +80,7 @@ export function HomeSidebar() {
 									id="dark-mode-switch"
 									checked={theme === "dark"}
 									onCheckedChange={toggleTheme}
+									className={"cursor-pointer"}
 								/>
 							</div>
 						</CollapsibleContent>

@@ -26,12 +26,12 @@ export default function TranslationBlock({ staffLanguage, onStaffLanguageChange,
         <div className="flex flex-col bg-gray-200 dark:bg-card rounded-2xl p-4 w-full h-full min-h-0">
             <div className="flex justify-between w-full">
                 {/* Language selectors */}
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col items-start gap-2">
                     <h1 className="font-playfair-display font-bold">Staff</h1>
                     <LanguageSelector language={staffLanguage} onSelect={onStaffLanguageChange} options={languageOptions} />
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col items-end gap-2">
                     <h1 className="font-playfair-display font-bold">Client</h1>
                     <LanguageSelector language={clientLanguage} onSelect={onClientLanguageChange} options={languageOptions} />
                 </div>
