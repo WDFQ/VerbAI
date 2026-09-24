@@ -235,6 +235,7 @@ export default function Home() {
             sessionId: crypto.randomUUID(),
             staffLanguage,
             clientLanguage,
+            label: label?.trim() || undefined,
             exchanges: messages.map((m) => ({
                 speaker: m.role,
                 staffText: m.role === "staff" ? m.originalText : m.translatedText,
