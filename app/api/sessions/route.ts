@@ -12,6 +12,7 @@ type SessionBodyShape = {
     sessionId: string
     staffLanguage: string
     clientLanguage: string
+    label?: string
     exchanges: ExchangeShape[]
 }
 
@@ -50,7 +51,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
     }
 
-    const { sessionId, staffLanguage, clientLanguage, exchanges } = body
+    const { sessionId, staffLanguage, clientLanguage, label, exchanges } = body
 
     if (!sessionId || !staffLanguage || !clientLanguage || !Array.isArray(exchanges) || exchanges.length === 0) {
         return NextResponse.json({ error: 'Missing sessionId, staffLanguage, clientLanguage, or exchanges' }, { status: 400 })
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest) {
     }
 
     try {
-        await saveSessionWithRetry(sessionId, staffLanguage, clientLanguage, exchanges)
+        await saveSessionWithRetry(sessionId, staffLanguage, clientLanguage, label, exchanges)
         return NextResponse.json({ success: true, sessionId }, { status: 200 })
     } catch (error) {
         console.error('Firestore write failed after retries:', error)
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
     }
 }
 
-async function saveSessionWithRetry(sessionId: string, staffLanguage: string, clientLanguage: string, exchanges: ExchangeShape[]) {
+async function saveSessionWithRetry(sessionId: string, staffLanguage: string, clientLanguage: string, label: string | undefined, exchanges: ExchangeShape[]) {
     const MAX_ATTEMPTS = 3
     let lastError
 
@@ -81,13 +82,13 @@ async function saveSessionWithRetry(sessionId: string, staffLanguage: string, cl
             const sessionReference = db.collection('sessions').doc(sessionId)
 
             // e.g. 2026-09-03 — en/prs
-            const label = `${new Date().toISOString().split('T')[0]} — ${staffLanguage}/${clientLanguage}`
+            // const sessionLabel =`${new Date().toISOString().split('T')[0]} — ${staffLanguage}/${clientLanguage}`
 
             // define the object for the chat session
             batch.set(sessionReference, {
                 staffLanguage,
                 clientLanguage,
-                label,
+                label: label,
                 createdAt: FieldValue.serverTimestamp(),
             })
 
