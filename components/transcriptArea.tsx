@@ -62,8 +62,12 @@ export default function TranscriptArea({ messages, staffLanguage, clientLanguage
         <div className="flex-1 w-full min-h-0 overflow-y-auto p-3 space-y-3">
             {messages.map((message) => {
                 const isStaff = message.role === "staff";
-                const messageLanguage = isStaff ? staffLanguage : clientLanguage;
-                const languageCode = toBcp47(messageLanguage);
+                // The translated text is in the other party's language, so the TTS voice must match that language
+                let translatedLanguage = staffLanguage;
+                if (isStaff) {
+                    translatedLanguage = clientLanguage;
+                }
+                const translatedLanguageCode = toBcp47(translatedLanguage);
 
                 let isLoading = false;
                 let retryStage: "transcription" | "translation" | null = null;
@@ -148,7 +152,9 @@ export default function TranscriptArea({ messages, staffLanguage, clientLanguage
                             disabled={isLoading || hasError}
                             className="mt-1 mx-1.5 opacity-60 hover:opacity-100 transition-opacity cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed"
                             onClick={function handlePlayAudioClick() {
-                                handleTextToSpeech(message.originalText ?? "", languageCode);
+                                if (message.translatedText !== null) {
+                                    handleTextToSpeech(message.translatedText, translatedLanguageCode);
+                                }
                             }}
                         >
                             <Image src={SoundIcon} alt="" width={18} height={18} className="dark:invert" />
