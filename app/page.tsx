@@ -17,6 +17,10 @@ export default function Home() {
     const [clientLanguage, setClientLanguage] = useState<string | null>(null);
     const [activeTurn, setActiveTurn] = useState<"staff" | "client" | null>(null);
     const [messages, setMessages] = useState<TranscriptMessage[]>([]);
+    const [isSaving, setIsSaving] = useState(false);
+    const [hasSaved, setHasSaved] = useState(false);
+    // generated once per chat so repeated saves target the same session document
+    const sessionIdRef = useRef<string | null>(null);
     const { setStatus } = useStatus();
 
     const bothLanguagesSelected = staffLanguage != null && clientLanguage != null;
@@ -203,8 +207,17 @@ export default function Home() {
     };
 
     const handleSaveSession = async () => {
+        if (isSaving || hasSaved) {
+            return;
+        }
+
+        if (sessionIdRef.current === null) {
+            sessionIdRef.current = crypto.randomUUID();
+        }
+
+        setIsSaving(true);
         const payload = {
-            sessionId: crypto.randomUUID(),
+            sessionId: sessionIdRef.current,
             staffLanguage,
             clientLanguage,
             exchanges: messages.map((m) => ({
@@ -229,7 +242,12 @@ export default function Home() {
 
             switch (response.status) {
                 case 200:
+                    setHasSaved(true);
                     alert("Session saved successfully.");
+                    break;
+                case 409:
+                    setHasSaved(true);
+                    alert("This session has already been saved.");
                     break;
                 case 400:
                     alert(`Could not save session: ${data.error ?? "the request data was invalid."}`);
@@ -246,14 +264,24 @@ export default function Home() {
         } catch (error) {
             console.error("Network error while saving session:", error);
             alert("Could not reach the server. Check your internet connection and try again.");
+        } finally {
+            setIsSaving(false);
         }
     };
+
+    let saveButtonLabel = "Save session";
+    if (isSaving) {
+        saveButtonLabel = "Saving...";
+    }
+    if (hasSaved) {
+        saveButtonLabel = "Saved";
+    }
 
     return (
         <div className="flex flex-col h-full">
             {/* Save button */}
-            <button onClick={handleSaveSession} className="px-4 py-2 m-2 rounded bg-white border border-deep-pink text-black rounded cursor-pointer font-playfair-display font-bold">
-                Save session
+            <button onClick={handleSaveSession} disabled={isSaving || hasSaved} className="px-4 py-2 m-2 rounded bg-white border border-deep-pink text-black rounded cursor-pointer font-playfair-display font-bold disabled:opacity-50 disabled:cursor-not-allowed">
+                {saveButtonLabel}
             </button>
 
             <div className="flex gap-4 p-4 flex-1 min-h-0">

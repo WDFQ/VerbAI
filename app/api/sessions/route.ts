@@ -15,6 +15,18 @@ type SessionBodyShape = {
     exchanges: ExchangeShape[]
 }
 
+const FIRESTORE_ALREADY_EXISTS_CODE = 6
+
+class SessionAlreadyExistsError extends Error {}
+
+function isAlreadyExistsError(error: unknown) {
+    if (typeof error !== 'object' || error === null) {
+        return false
+    }
+    const errorWithCode = error as { code?: number }
+    return errorWithCode.code === FIRESTORE_ALREADY_EXISTS_CODE
+}
+
 /**
  * gets the entire
  */
@@ -65,6 +77,9 @@ export async function POST(req: NextRequest) {
         await saveSessionWithRetry(sessionId, staffLanguage, clientLanguage, exchanges)
         return NextResponse.json({ success: true, sessionId }, { status: 200 })
     } catch (error) {
+        if (error instanceof SessionAlreadyExistsError) {
+            return NextResponse.json({ error: 'Session already saved' }, { status: 409 })
+        }
         console.error('Firestore write failed after retries:', error)
         return NextResponse.json({ error: 'Failed to save session' }, { status: 502 })
     }
@@ -83,7 +98,8 @@ async function saveSessionWithRetry(sessionId: string, staffLanguage: string, cl
             const label = `${new Date().toISOString().split('T')[0]} — ${staffLanguage}/${clientLanguage}`
 
             // define the object for the chat session
-            batch.set(sessionReference, {
+            // create() fails with ALREADY_EXISTS if this session was saved before
+            batch.create(sessionReference, {
                 staffLanguage,
                 clientLanguage,
                 label,
@@ -109,6 +125,10 @@ async function saveSessionWithRetry(sessionId: string, staffLanguage: string, cl
             await batch.commit()
             return
         } catch (error) {
+            // a duplicate will never succeed on retry, so surface it immediately
+            if (isAlreadyExistsError(error)) {
+                throw new SessionAlreadyExistsError()
+            }
             lastError = error
             console.warn(`Firestore write attempt ${attempt} failed, retrying...`)
         }
