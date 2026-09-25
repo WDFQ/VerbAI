@@ -8,43 +8,56 @@ import TranscriptArea from "./transcriptArea";
 import { TranscriptMessage } from "@/types/transcript";
 
 type TranslationBlockProps = {
-    role: "staff" | "client";
-    language: string | null;
-    onLanguageChange: (lang: string) => void;
+    staffLanguage: string | null;
+    onStaffLanguageChange: (lang: string) => void;
+    clientLanguage: string | null;
+    onClientLanguageChange: (lang: string) => void;
     languageOptions: string[];
-    isActive: boolean;
-    isDisabled: boolean;
-    onMicTap: () => void;
+    activeTurn: "staff" | "client" | null;
+    bothLanguagesSelected: boolean;
+    onMicTap: (role: "staff" | "client") => void;
     messages: TranscriptMessage[];
     onRetryTranscription: (messageId: string) => void;
     onRetryTranslation: (messageId: string) => void;
 };
 
-export default function TranslationBlock({ role, language, onLanguageChange, languageOptions, isActive, isDisabled, onMicTap, messages, onRetryTranscription, onRetryTranslation }: TranslationBlockProps) {
+export default function TranslationBlock({ staffLanguage, onStaffLanguageChange, clientLanguage, onClientLanguageChange, languageOptions, activeTurn, bothLanguagesSelected, onMicTap, messages, onRetryTranscription, onRetryTranslation }: TranslationBlockProps) {
     return (
-        <div className="flex flex-col items-center bg-gray-200 rounded-2xl p-4 w-full h-full min-h-0">
+        <div className="flex flex-col bg-gray-200 dark:bg-card rounded-2xl p-4 w-full h-full min-h-0">
             <div className="flex justify-between w-full">
-                {/* Label */}
-                <h1 className="font-playfair-display font-bold">{role.charAt(0).toUpperCase() + role.slice(1).toLowerCase()}</h1>
+                {/* Language selectors */}
+                <div className="flex flex-col items-start gap-2">
+                    <h1 className="font-playfair-display font-bold">Staff</h1>
+                    <LanguageSelector language={staffLanguage} onSelect={onStaffLanguageChange} options={languageOptions} />
+                </div>
 
-                {/* Language Selector */}
-                <LanguageSelector language={language} onSelect={onLanguageChange} options={languageOptions} />
+                <div className="flex flex-col items-end gap-2">
+                    <h1 className="font-playfair-display font-bold">Client</h1>
+                    <LanguageSelector language={clientLanguage} onSelect={onClientLanguageChange} options={languageOptions} />
+                </div>
             </div>
 
-            {/* Transcript Area */}
+            {/* Shared transcript area */}
             <TranscriptArea
                 messages={messages}
-                ownRole={role}
-                language={language}
+                staffLanguage={staffLanguage}
+                clientLanguage={clientLanguage}
                 onRetryTranscription={onRetryTranscription}
                 onRetryTranslation={onRetryTranslation}
             />
 
-            {/* Mic Button */}
-            <button onClick={onMicTap} disabled={isDisabled} className={`flex items-center justify-center w-16 h-16 rounded-full cursor-pointer transition-colors ${
-                isActive ? "bg-pink-500" : "bg-gray-600"} ${isDisabled ? "opacity-40 cursor-not-allowed" : ""}`}>
-                <Image src={isActive ? StopIcon : MicIcon} alt={isActive ? "Stop" : "Microphone"} width={24} height={24} />
-            </button>
+            {/* Mic buttons */}
+            <div className="flex justify-around">
+                <button onClick={() => onMicTap("staff")} disabled={!bothLanguagesSelected || activeTurn === "client"} className={`flex items-center justify-center w-16 h-16 rounded-full cursor-pointer transition-colors ${
+                    activeTurn === "staff" ? "bg-pink-500" : "bg-gray-600"} ${!bothLanguagesSelected || activeTurn === "client" ? "opacity-40 cursor-not-allowed" : ""}`}>
+                    <Image src={activeTurn === "staff" ? StopIcon : MicIcon} alt={activeTurn === "staff" ? "Stop" : "Microphone"} width={24} height={24} />
+                </button>
+
+                <button onClick={() => onMicTap("client")} disabled={!bothLanguagesSelected || activeTurn === "staff"} className={`flex items-center justify-center w-16 h-16 rounded-full cursor-pointer transition-colors ${
+                    activeTurn === "client" ? "bg-pink-500" : "bg-gray-600"} ${!bothLanguagesSelected || activeTurn === "staff" ? "opacity-40 cursor-not-allowed" : ""}`}>
+                    <Image src={activeTurn === "client" ? StopIcon : MicIcon} alt={activeTurn === "client" ? "Stop" : "Microphone"} width={24} height={24} />
+                </button>
+            </div>
         </div>
     );
 }

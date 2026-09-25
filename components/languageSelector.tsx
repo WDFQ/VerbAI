@@ -19,7 +19,7 @@ export default function LanguageSelector({ language, onSelect, options }: Langua
                 {language ?? "Choose language..."}
             </button>
 
-            <div className={`fixed inset-0 bg-gray-200 flex flex-col z-50 transform transition-transform duration-400 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-full'}`}>
+            <div className={`fixed inset-0 bg-gray-200 dark:bg-card flex flex-col z-50 transform transition-transform duration-400 ease-out ${isOpen ? 'translate-y-0' : 'translate-y-full'}`}>
                 {/* Header */}
                 <div className="bg-gray-700 text-white text-sm font-medium px-4 py-3">
                     Choose language
@@ -28,7 +28,7 @@ export default function LanguageSelector({ language, onSelect, options }: Langua
                 {/* List of languages */}
                 <div className="flex-1 overflow-y-auto">
                     {options.map((option) => (
-                        <button key={option} onClick={() => { onSelect(option); setIsOpen(false); }} className="block w-full text-left px-4 py-3 text-sm font-medium hover:bg-gray-300 cursor-pointer font-playfair-display font-medium">
+                        <button key={option} onClick={() => { onSelect(option); setIsOpen(false); }} className="block w-full text-left px-4 py-3 text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-700 cursor-pointer font-playfair-display font-medium">
                             {option}
                         </button>
                     ))}
@@ -36,7 +36,7 @@ export default function LanguageSelector({ language, onSelect, options }: Langua
 
                 {/* Close button */}
                 <div className="flex justify-center pb-6 pt-2">
-                    <button onClick={() => setIsOpen(false)} className="w-12 h-12 rounded-full bg-gray-900 flex items-center justify-center cursor-pointer">
+                    <button onClick={() => setIsOpen(false)} className="w-12 h-12 rounded-full bg-gray-900 dark:bg-gray-600 flex items-center justify-center cursor-pointer">
                         <Image src={CloseIcon} alt="Close" height={20} width={20} className="invert"/>
                     </button>
                 </div>
