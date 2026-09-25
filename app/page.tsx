@@ -19,6 +19,10 @@ export default function Home() {
     const [clientLanguage, setClientLanguage] = useState<string | null>(null);
     const [activeTurn, setActiveTurn] = useState<"staff" | "client" | null>(null);
     const [messages, setMessages] = useState<TranscriptMessage[]>([]);
+    const [isSaving, setIsSaving] = useState(false);
+    const [hasSaved, setHasSaved] = useState(false);
+    // generated once per chat so repeated saves target the same session document
+    const sessionIdRef = useRef<string | null>(null);
     const { setStatus } = useStatus();
 
     const [showSavePopup, setShowSavePopup] = useState(false);
@@ -231,8 +235,17 @@ export default function Home() {
     };
 
     const handleSaveSession = async (label: string) => {
+        if (isSaving || hasSaved) {
+            return;
+        }
+
+        if (sessionIdRef.current === null) {
+            sessionIdRef.current = crypto.randomUUID();
+        }
+
+        setIsSaving(true);
         const payload = {
-            sessionId: crypto.randomUUID(),
+            sessionId: sessionIdRef.current,
             staffLanguage,
             clientLanguage,
             label: label?.trim() || undefined,
@@ -262,7 +275,12 @@ export default function Home() {
 
             switch (response.status) {
                 case 200:
+                    setHasSaved(true);
                     alert("Session saved successfully.");
+                    break;
+                case 409:
+                    setHasSaved(true);
+                    alert("This session has already been saved.");
                     break;
                 case 400:
                     alert(`Could not save session: ${data.error ?? "the request data was invalid."}`);
@@ -279,8 +297,18 @@ export default function Home() {
         } catch (error) {
             console.error("Network error while saving session:", error);
             alert("Could not reach the server. Check your internet connection and try again.");
+        } finally {
+            setIsSaving(false);
         }
     };
+
+    let saveButtonLabel = "Save session";
+    if (isSaving) {
+        saveButtonLabel = "Saving...";
+    }
+    if (hasSaved) {
+        saveButtonLabel = "Saved";
+    }
 
     // Generates a default label for the session based on the current date and time
     const generateDefaultLabel = () => {
@@ -294,10 +322,11 @@ export default function Home() {
             {/* Save button */}
             <button
                 onClick={() => setShowSavePopup(true)}
-                className="flex items-center justify-center gap-2 px-4 py-2 m-2 rounded-lg bg-white dark:bg-card border border-deep-pink text-black dark:text-white cursor-pointer font-playfair-display font-bold transition-colors duration-150 hover:bg-deep-pink hover:text-white dark:hover:bg-deep-pink dark:hover:text-white"
+                disabled={isSaving || hasSaved}
+                className="flex items-center justify-center gap-2 px-4 py-2 m-2 rounded-lg bg-white dark:bg-card border border-deep-pink text-black dark:text-white cursor-pointer font-playfair-display font-bold transition-colors duration-150 hover:bg-deep-pink hover:text-white dark:hover:bg-deep-pink dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
             >
                 <Save className="size-4" />
-                Save session
+                {saveButtonLabel}
             </button>
 
             {/* Popup for saving the session */}
