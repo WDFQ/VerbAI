@@ -5,7 +5,6 @@ export async function POST(request: NextRequest) {
         const body = await request.json();
 
         const text = body.text;
-        const languageCode = body.languageCode || "en-NZ";
 
         if (!text || typeof text !== "string") {
             return NextResponse.json(
@@ -14,30 +13,36 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        const apiKey = process.env.ELEVENLABS_API_KEY;
+        const voiceId = process.env.ELEVENLABS_VOICE_ID;
+
+        if (!apiKey || !voiceId) {
+            console.error("Missing ElevenLabs environment variables");
+
+            return NextResponse.json(
+                { error: "ElevenLabs configuration is missing" },
+                { status: 500 }
+            );
+        }
+
         const response = await fetch(
-            `https://texttospeech.googleapis.com/v1/text:synthesize?key=${process.env.SPEECH_API_KEY}`,
+            `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
             {
                 method: "POST",
                 headers: {
+                    "xi-api-key": apiKey,
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    input: {
-                        text,
-                    },
-                    voice: {
-                        languageCode,
-                    },
-                    audioConfig: {
-                        audioEncoding: "MP3",
-                    },
+                    text,
+                    model_id: "eleven_multilingual_v2",
                 }),
             }
         );
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error("Text-to-Speech API error:", errorText);
+            console.error("ElevenLabs TTS error:", errorText);
 
             return NextResponse.json(
                 { error: "Text-to-speech failed" },
@@ -45,16 +50,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const data = await response.json();
-
-        if (!data.audioContent) {
-            return NextResponse.json(
-                { error: "No audio was generated" },
-                { status: 502 }
-            );
-        }
-
-        const audioBuffer = Buffer.from(data.audioContent, "base64");
+        const audioBuffer = Buffer.from(await response.arrayBuffer());
 
         return new NextResponse(audioBuffer, {
             status: 200,
@@ -62,11 +58,10 @@ export async function POST(request: NextRequest) {
                 "Content-Type": "audio/mpeg",
                 "Content-Length": audioBuffer.length.toString(),
                 "Cache-Control": "no-store",
-                "X-Language-Code": languageCode,
             },
         });
     } catch (error) {
-        console.error("TTS error:", error);
+        console.error("ElevenLabs TTS error:", error);
 
         return NextResponse.json(
             { error: "Invalid JSON body" },
