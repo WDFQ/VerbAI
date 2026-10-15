@@ -41,10 +41,38 @@ export async function POST(req: NextRequest) {
  */
 async function translate(sttText: String, targetLanguage: String) {
     const ai = new GoogleGenAI({ apiKey: process.env.LLM_API_KEY })
-    const interaction = await ai.interactions.create({
-        model: 'gemini-3.7-flash',
-        input: `Translate the following into ${targetLanguage}. Only return the translated text:\n\n${sttText}`,
-    })
+    
+    const languageInstruction =
+    targetLanguage === "Dari"
+        ? "spoken Dari as everyday people in Afghanistan would say it in conversation (Afghan Persian, not Iranian Persian). Use natural, informal-but-polite spoken phrasing, not formal or literary written style. Keep sentences short and simple."
+        : targetLanguage
 
-    return interaction.output_text
+    const interaction = await ai.interactions.create({
+        model: 'gemini-3.5-flash-lite',
+        input: `You are interpreting live speech between a social-services staff member and a refugee client. Translate the following into ${languageInstruction} Translate the meaning naturally rather than word for word. Return ONLY a JSON object in this exact shape: {"translation": "..."}\n\nText:\n${sttText}`    })
+
+    //Ensure that the output text exists in the response
+    if (!interaction.output_text) {
+        console.error("No output_text in response:", JSON.stringify(interaction, null, 2));
+        throw new Error("Translation response did not contain output text");
+    }
+     const raw = interaction.output_text
+
+    // 2. Grab everything from the first { to the last }, ignoring fences or stray text
+    const start = raw.indexOf('{')
+    const end = raw.lastIndexOf('}')
+
+    if (start === -1 || end === -1) {
+        console.error('No JSON object found in response:', raw)
+        throw new Error('Translation response did not contain JSON')
+    }
+
+    // 3. Parse and return just the translation
+    try {
+        const jsonResponse = JSON.parse(raw.slice(start, end + 1))
+        return jsonResponse.translation
+    } catch (error) {
+        console.error('Error parsing translation response:', error, raw)
+        throw new Error('Failed to parse translation response')
+    }
 }

@@ -131,30 +131,6 @@ export default function Home() {
         }
     }
 
-    //TESTING SAVING (DELETE)
-    const loadMockMessages = () => {
-        setStaffLanguage("English");
-        setClientLanguage("Dari");
-        setMessages([
-            {
-                id: crypto.randomUUID(),
-                role: "staff",
-                originalText: "Hi, how are you today?",
-                translatedText: "سلام، امروز چطور هستید؟",
-                hasError: false,
-                timestamp: new Date().toISOString(),
-            },
-            {
-                id: crypto.randomUUID(),
-                role: "client",
-                originalText: "من به کمک برای درخواست ویزای خود نیاز دارم.",
-                translatedText: "I need help with my visa application.",
-                hasError: false,
-                timestamp: new Date().toISOString(),
-            },
-        ]);
-    };
-
     async function handleRetryTranscription(messageId: string) {
         const recordingData = recordingDataByMessageId.current.get(messageId);
         const message = messages.find((message) => message.id === messageId);
@@ -256,9 +232,6 @@ export default function Home() {
             })),
         };
 
-        //DEBUGGING
-        console.log("Saving session with payload:", payload);
-
         try {
             const response = await fetch("/api/sessions", {
                 method: "POST",
@@ -336,13 +309,6 @@ export default function Home() {
                 defaultLabel={generateDefaultLabel()}
                 onSave={handleSaveSession}
             />
-
-            {/* TESTING SAVING (DELETE) */}
-            {process.env.NODE_ENV === "development" && (
-                <button onClick={loadMockMessages} className="px-4 py-2 m-2 rounded bg-yellow-200 text-black rounded cursor-pointer font-playfair-display font-bold">
-                    Load Mock Data (dev only)
-                </button>
-            )}
 
             <div className="flex-1 min-h-0 p-4">
                 <TranslationBlock
