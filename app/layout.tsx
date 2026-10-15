@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Playfair_Display, Geist } from "next/font/google";
+import { Cairo, Geist } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
@@ -8,10 +8,8 @@ import Navbar from "@/components/navbar";
 import { StatusProvider } from "@/contexts/statusContext";
 import { ThemeProvider } from "@/contexts/themeContext";
 
-const geist = Geist({ subsets: ["latin"], variable: "--font-sans" });
-
-const playfairDisplay = Playfair_Display({
-	variable: "--font-playfair-display",
+const cairo = Cairo({
+	variable: "--font-cairo-loaded",
 	subsets: ["latin"],
 });
 
@@ -23,7 +21,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
 	return (
 		<html
-			className={`${playfairDisplay.variable} h-full antialiased`}
+			className={`${cairo.variable} font-sans h-full antialiased`}
 			lang="en"
 			suppressHydrationWarning
 		>

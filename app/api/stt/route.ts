@@ -23,6 +23,9 @@ export async function POST(req: NextRequest) {
                         encoding: "WEBM_OPUS",
                         sampleRateHertz: 48000,
                         languageCode: languageCode,
+
+                        model: "latest_long",
+                        useEnhanced: true,
                     },
                     audio: {
                         content: audioBase64,
