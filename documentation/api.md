@@ -153,7 +153,7 @@ languageCode identifies the spoken language using a BCP-47 language code.
 
 ## POST /api/tts
 
-Converts text into speech using Google Cloud Text-to-Speech.
+Converts text into speech. Persian/Dari (`fa`, `prs`, `pes`) use ElevenLabs; every other language uses Google Cloud Text-to-Speech.
 
 ### Request Body
 
@@ -168,12 +168,13 @@ Converts text into speech using Google Cloud Text-to-Speech.
 
 - 200 — MP3 audio containing the generated speech.
 - 400 — missing or invalid text, `{ "error": "No text provided" }`, or invalid JSON body: `{ "error": "Invalid JSON body" }`
-- 502 — Google Text-to-Speech API call failed, `{ "error": "Text-to-speech failed" }`
+- 500 — the API key (and voice ID for ElevenLabs) for the selected provider is not configured
+- 502 — the Google or ElevenLabs API call failed, `{ "error": "Text-to-speech failed" }`
 
 ### Notes
 
-- Text is sent to Google Cloud Text-to-Speech using the Google Text-to-Speech REST API.
-- The requested languageCode is passed to the Google TTS API.
+- Google requests use the Google Text-to-Speech REST API.
+- If the primary subtag of languageCode is `fa`, `prs` or `pes` (e.g. `prs-AF`), the request goes to ElevenLabs (`ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`). Otherwise the languageCode is passed to the Google TTS API (`SPEECH_API_KEY`).
 - The generated audio is returned as MP3.
 - The response has Content-Type: audio/mpeg.
 - The X-Language-Code response header contains the requested language code.
