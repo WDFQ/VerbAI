@@ -9,7 +9,7 @@ Built with Next.js (App Router), Google Gemini (speech-to-text, translation, and
 - **Two-way conversation UI** — separate staff/client panels, each with its own language selection and mic control, so only one side records at a time.
 - **Speech-to-text** — spoken audio is transcribed via Gemini.
 - **Translation** — transcripts are translated into the other party's language via Gemini Flash.
-- **Text-to-speech** — translated text can be read aloud via Gemini's TTS.
+- **Text-to-speech** — translated text can be read aloud via Google Cloud Text-to-Speech (ElevenLabs for Persian/Dari).
 - **Session history** — completed conversations are saved to Firestore, with each exchange recorded in order.
 
 Supported languages: English, Dari, Swahili, Kinyarwanda (see `lib/languageCodes.ts`).
