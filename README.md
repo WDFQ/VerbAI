@@ -89,5 +89,3 @@ documentation/   # API reference (see documentation/api.md)
 Full request/response schemas for `/api/sessions`, `/api/llm`, `/api/stt`, and `/api/tts` are documented in [`documentation/api.md`](./documentation/api.md).
 
 ## Learn More
-
-This project uses a pre-release version of Next.js with breaking changes from the version most tooling and training data expects — see [AGENTS.md](./AGENTS.md) before making framework-level changes.
