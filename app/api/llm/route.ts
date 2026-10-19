@@ -48,8 +48,9 @@ async function translate(sttText: String, targetLanguage: String) {
         : targetLanguage
 
     const interaction = await ai.interactions.create({
-        model: 'gemini-3.5-flash-lite',
-        input: `You are interpreting live speech between a social-services staff member and a refugee client. Translate the following into ${languageInstruction} Translate the meaning naturally rather than word for word. Return ONLY a JSON object in this exact shape: {"translation": "..."}\n\nText:\n${sttText}`    })
+        model: 'gemini-3.7-flash',
+        input: `Interpret this live speech from a social-services appointment into ${languageInstruction}. Use natural, polite spoken phrasing, not formal or word-for-word. Keep names, numbers and dates exact. Output only JSON: {"translation":"..."}\n\nText: ${sttText}`    
+    })
 
     //Ensure that the output text exists in the response
     if (!interaction.output_text) {

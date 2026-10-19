@@ -11,23 +11,33 @@ type SaveSessionPopupProps = {
 
 export default function SaveSessionPopup({ isOpen, onClose, defaultLabel, onSave }: SaveSessionPopupProps) {
     const [label, setLabel] = useState(defaultLabel);
-
-    const handleKeyDown = async (event: React.KeyboardEvent<HTMLInputElement>) => {
-        if (event.key === "Enter") {
-            try {
-                await onSave(label);
-                onClose();
-            } catch (error) {
-                console.error("Error saving session:", error);
-            }
-        }
-    };
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
             setLabel(defaultLabel);
         }
     }, [isOpen, defaultLabel]);
+
+    const handleSave = async () => {
+        if (isSaving) return; // Prevent multiple saves
+        setIsSaving(true);
+        try {
+            await onSave(label);
+            onClose();
+        } catch (error) {
+            console.error("Error saving session:", error);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleKeyDown = async (event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === "Enter") {
+            handleSave();
+        }
+    };
+    
     
     if (!isOpen) return null;
 
@@ -42,8 +52,10 @@ export default function SaveSessionPopup({ isOpen, onClose, defaultLabel, onSave
                     className="w-full border rounded px-3 py-2 mb-4" 
                 />
                 <div className="flex justify-end gap-2">
-                    <button onClick={onClose} className="px-4 py-2 text-sm text-gray-500">Cancel</button>
-                    <button onClick={() => onSave(label)} className="px-4 py-2 bg-gray-900 text-white rounded text-sm">Save</button>
+                    <button onClick={onClose} className="px-4 py-2 text-sm text-gray-500 cursor-pointer">Cancel</button>
+                    <button onClick={handleSave} className="px-4 py-2 bg-gray-900 text-white rounded text-sm cursor-pointer disable:opacity-50 disabled:cursor-not-allowed" disabled={isSaving}>
+                        {isSaving ? "Saving..." : "Save"}
+                    </button>
                 </div>
             </div>
         </div>
