@@ -16,6 +16,7 @@ export default function History() {
     const [search, setSearch] = useState("");
     const [sessions, setSessions] = useState<Session[]>([]);
     const [loading, setLoading] = useState(true);
+    const [dotCount, setDotCount] = useState(1);
     const router = useRouter();
 
     function formatDate(isoString: string | null | undefined): string {
@@ -53,13 +54,39 @@ export default function History() {
         fetchSessions();
     }, []);
 
+    // Cycling the loading ellipsis: "." -> ".." -> "..." -> "."
+    useEffect(() => {
+        if (!loading) {
+            return;
+        }
+
+        const intervalId = setInterval(function () {
+            setDotCount(function (previousCount) {
+                if (previousCount >= 3) {
+                    return 1;
+                }
+                return previousCount + 1;
+            });
+        }, 500);
+
+        return function () {
+            clearInterval(intervalId);
+        };
+    }, [loading]);
+
     const filteredSessions = sessions.filter((s) =>
         (s.label ?? "").toLowerCase().includes(search.toLowerCase()) ||
         s.staffLanguage.toLowerCase().includes(search.toLowerCase()) ||
         s.clientLanguage.toLowerCase().includes(search.toLowerCase())
     );
 
-    if (loading) return <p className="p-4">Loading sessions...</p>;
+    if (loading) {
+        return (
+            <p className="p-4 font-playfair-display font-medium">
+                Loading sessions{".".repeat(dotCount)}
+            </p>
+        );
+    }
 
     return (
         <div className="flex flex-col h-full p-4 gap-4">
