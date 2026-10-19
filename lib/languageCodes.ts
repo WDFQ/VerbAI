@@ -4,6 +4,8 @@ const BCP47_BY_LANGUAGE: Record<string, string> = {
     Dari: "prs-AF",
     Swahili: "sw-TZ",
     Kinyarwanda: "rw-RW",
+    Tagalog: "fil-PH",
+    Urdu: "ur-PK",
 };
 
 export function toBcp47(language: string | null): string | null {

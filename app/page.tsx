@@ -28,7 +28,7 @@ export default function Home() {
     const [showSavePopup, setShowSavePopup] = useState(false);
 
     const bothLanguagesSelected = staffLanguage != null && clientLanguage != null;
-    const options = ["English", "Dari", "Swahili", "Kinyarwanda"];
+    const options = ["English", "Dari", "Swahili", "Kinyarwanda", "Urdu", "Tagalog"];
 
     const recorder = useAudioRecorder();
 
