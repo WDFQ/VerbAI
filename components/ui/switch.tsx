@@ -4,6 +4,7 @@ import { Switch as SwitchPrimitive } from "@base-ui/react/switch"
 
 import { cn } from "@/lib/utils"
 
+// Styled toggle switch built on the Base UI switch primitive.
 function Switch({ className, ...props }: SwitchPrimitive.Root.Props) {
 	return (
 		<SwitchPrimitive.Root

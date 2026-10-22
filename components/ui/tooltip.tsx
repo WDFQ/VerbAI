@@ -4,6 +4,7 @@ import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip"
 
 import { cn } from "@/lib/utils"
 
+// Tooltip primitives with shared positioning and visual styles.
 function TooltipProvider({
   delay = 0,
   ...props

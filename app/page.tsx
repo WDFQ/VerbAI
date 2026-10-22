@@ -9,6 +9,19 @@ import { useStatus } from "@/contexts/statusContext";
 import { Save } from "lucide-react";
 import SaveSessionPopup from "@/components/saveSessionPopup";
 
+/**
+ * Main translation screen (route "/").
+ * 
+ * Flow for one spoken message:
+ *  mic tap -> start recording -> mic tap again -> stop recording -> send to STT -> show transcribed text -> send to LLM for translation -> show translated text
+ *  in the shared transcript.
+ * Audio playback (TTS) is triggered by the user clicking the speaker button next to each message, which sends the text to the TTS API and plays the returned audio.
+ * 
+ * Nothing is stored until the user saves the session, which sends the transcript to the server to be stored in Firestore.
+ * Refreshing the page or starting a New Sessoin will clear the transcript and any unsaved data.
+ */
+
+// Audio recording data that is kept around for each message so that a failed transcription can be retried without having to re-record
 type RecordingData = {
     audioBase64: string;
     languageCode: string;
@@ -17,22 +30,33 @@ type RecordingData = {
 export default function Home() {
     const [staffLanguage, setStaffLanguage] = useState<string | null>(null);
     const [clientLanguage, setClientLanguage] = useState<string | null>(null);
+
+    // Which role is currently recording (or null if neither is recording). This is used to disable the other role's mic button while one is recording.
     const [activeTurn, setActiveTurn] = useState<"staff" | "client" | null>(null);
+
+    // The shared transcript of messages between the staff and client. Each message has a role (staff or client), the original text (from STT), the translated text (from LLM), and a timestamp.
     const [messages, setMessages] = useState<TranscriptMessage[]>([]);
+
     const [isSaving, setIsSaving] = useState(false);
     const [hasSaved, setHasSaved] = useState(false);
-    // generated once per chat so repeated saves target the same session document
+
+    // The session ID is generated when the user first saves the session, and is kept around so that if they save again it will overwrite the same session rather than creating a new one.
     const sessionIdRef = useRef<string | null>(null);
     const { setStatus } = useStatus();
 
     const [showSavePopup, setShowSavePopup] = useState(false);
 
+    // Mics stay disabled until both languages are selected, to avoid recording in the wrong language.
     const bothLanguagesSelected = staffLanguage != null && clientLanguage != null;
-    const options = ["English", "Dari", "Swahili", "Kinyarwanda", "Urdu", "Tagalog"];
+    
+    // NOTE: these options must also exist in BCP47_BY_LANGUAGE (lib/languageCodes.ts) and in the TTS/STT APIs, 
+    // otherwise the user will get an error when trying to record or play audio.
+    // See README, "How to add a language" for instructions on how to add a new language.
+    const options = ["English", "Dari", "Swahili", "Kinyarwanda", "Urdu"];
 
     const recorder = useAudioRecorder();
 
-    // Keeps the recorded audio for each message around so a failed transcription can be retried
+    // Keeps the recorded audio for each message around so a failed transcription can be retried.
     const recordingDataByMessageId = useRef<Map<string, RecordingData>>(new Map());
 
     function markMessageAsErrored(messageId: string) {
@@ -53,6 +77,8 @@ export default function Home() {
         }));
     }
 
+    // Translates the given text from the source language to the target language using the LLM API (staff speech -> client language
+    // and vice versa). Called after transcription is complete, or when the user retries a failed translation.
     async function runTranslation(role: "staff" | "client", messageId: string, sttText: string) {
         try {
             setStatus("Translating...");
@@ -88,6 +114,8 @@ export default function Home() {
         }
     }
 
+    // Sends the recorded audio to the STT API for transcription, and then calls runTranslation() to translate the transcribed text. 
+    // Also called by the retry button, using the audio saved in recordingDataByMessageId.
     async function runTranscription(role: "staff" | "client", messageId: string, audioBase64: string, languageCode: string) {
         try {
             setStatus("Getting text from speech...");
@@ -106,6 +134,8 @@ export default function Home() {
                 return;
             }
 
+            // Empty transcript means no speech was detected, so we remove the placeholder and 
+            // its stored audio instead of leaving a retry button.
             if (!data.transcript || data.transcript.trim() === "") {
                 alert("No speech detected. Please try again.");
                 setMessages((prev) => prev.filter((message) => message.id !== messageId));
@@ -113,7 +143,7 @@ export default function Home() {
                 return;
             }
 
-            // Show the transcribed text right away, before translation finishes
+            // Show the transcribed text right away, before translation finishes.
             setMessages((prev) => prev.map((message) => {
                 if (message.id === messageId) {
                     return { ...message, originalText: data.transcript, hasError: false };
@@ -131,6 +161,8 @@ export default function Home() {
         }
     }
 
+    // Retry after a failed transcription. Uses the audio saved in recordingDataByMessageId to avoid having to re-record.
+    // Only works while the page stays open (refreshing the page will clear the saved audio).
     async function handleRetryTranscription(messageId: string) {
         const recordingData = recordingDataByMessageId.current.get(messageId);
         const message = messages.find((message) => message.id === messageId);
@@ -143,6 +175,7 @@ export default function Home() {
         await runTranscription(message.role, messageId, recordingData.audioBase64, recordingData.languageCode);
     }
 
+    // Retry after a failed translation. Uses the original text from the message to avoid having to re-record or re-transcribe.
     async function handleRetryTranslation(messageId: string) {
         const message = messages.find((message) => message.id === messageId);
 
@@ -153,6 +186,8 @@ export default function Home() {
         await runTranslation(message.role, messageId, message.originalText);
     }
 
+    // One handler for both mic buttons. First tap starts recording, second tap stops recording 
+    // and sends the audio to the STT API for transcription.
     const handleMicTap = async (role: "staff" | "client") => {
         if (activeTurn === null) {
             // Starting a new recording
@@ -171,6 +206,7 @@ export default function Home() {
             }
             return;
         }
+
         // Ensure you don't record for the inactive role
         if (activeTurn !== role) {
             return;
@@ -183,6 +219,7 @@ export default function Home() {
 
             // Convert audio file into correct format
             const audioBase64 = await blobToBase64(blob);
+            // Language code is based on the speaker's own language, for speech-to-text transcription.
             const languageCode = toBcp47(role === "staff" ? staffLanguage : clientLanguage);
 
             if (!languageCode) {
@@ -210,6 +247,10 @@ export default function Home() {
         }
     };
 
+    // Saves the whole conversation to Firestore via POST /api/sessions. 
+    // The session ID is generated the first time the user saves, and is kept around so 
+    // that if they save again it will overwrite the same session rather than creating a new one.
+    // (the API replies with 409 if it already exists).
     const handleSaveSession = async (label: string) => {
         if (isSaving || hasSaved) {
             return;
@@ -225,6 +266,11 @@ export default function Home() {
             staffLanguage,
             clientLanguage,
             label: label?.trim() || undefined,
+            // staffText / clientText describe the LANGUAGE of each line, not who
+            // spoke: staffTexr is always the staff language version, clientText is
+            // always the client language version. "speaker" says who actually said it.
+            // TODO: messages still loading or errored have null text and are sent as-is.
+            // Consider filtering them out or blocking the save button until none remain.
             exchanges: messages.map((m) => ({
                 speaker: m.role,
                 staffText: m.role === "staff" ? m.originalText : m.translatedText,
@@ -252,6 +298,7 @@ export default function Home() {
                     alert("Session saved successfully.");
                     break;
                 case 409:
+                    // Already exists, so treat it as saved
                     setHasSaved(true);
                     alert("This session has already been saved.");
                     break;
@@ -283,7 +330,7 @@ export default function Home() {
         saveButtonLabel = "Saved";
     }
 
-    // Generates a default label for the session based on the current date and time
+    // Generates a default label for the session based on the current date and time.
     const generateDefaultLabel = () => {
         const now = new Date();
         const dateStr = now.toLocaleDateString("en-NZ", { day: "numeric", month: "short", year: "numeric" });
@@ -292,7 +339,7 @@ export default function Home() {
 
     return (
         <div className="flex flex-col h-full">
-            {/* Save button */}
+            {/* Save button: opens the popup where staff can edit the label */}
             <button
                 onClick={() => setShowSavePopup(true)}
                 disabled={isSaving || hasSaved}
@@ -311,6 +358,7 @@ export default function Home() {
             />
 
             <div className="flex-1 min-h-0 p-4">
+                {/* Language selectors, shared transcript and both mic buttons */}
                 <TranslationBlock
                     staffLanguage={staffLanguage}
                     onStaffLanguageChange={setStaffLanguage}
