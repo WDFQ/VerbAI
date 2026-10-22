@@ -9,6 +9,13 @@ type SaveSessionPopupProps = {
     onSave: (label: string) => void;
 };
 
+/**
+ * Shows a modal for naming and saving a session.
+ *
+ * Initializes the input from defaultLabel whenever the modal opens. Calls
+ * onSave with the entered label and closes on success; prevents duplicate saves
+ * while a save is already in progress.
+ */
 export default function SaveSessionPopup({ isOpen, onClose, defaultLabel, onSave }: SaveSessionPopupProps) {
     const [label, setLabel] = useState(defaultLabel);
     const [isSaving, setIsSaving] = useState(false);

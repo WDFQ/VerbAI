@@ -4,6 +4,9 @@ import Image from "next/image";
 import MenuIcon from "../public/menu.svg";
 import { useSidebar } from "@/components/ui/sidebar";
 
+/**
+ * Renders the app's top navigation bar and a button for toggling the sidebar.
+ */
 export default function Navbar() {
 	const { toggleSidebar } = useSidebar();
 

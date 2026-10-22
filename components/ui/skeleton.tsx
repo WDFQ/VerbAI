@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils"
 
+// Displays a pulsing placeholder while content is loading.
 function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div

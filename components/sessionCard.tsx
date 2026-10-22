@@ -6,6 +6,9 @@ type SessionCardProps = {
     onClick: () => void;
 }
 
+/**
+ * Displays a saved session's label, date, languages, and an action to open it.
+ */
 export default function SessionCard({ label, dateTime, staffLanguage, clientLanguage, onClick }: SessionCardProps) {
     return (
         <button onClick={onClick} className="group w-full h-20 bg-gray-200 rounded-lg px-4 py-3 text-left hover:bg-deep-pink transition-colors cursor-pointer">

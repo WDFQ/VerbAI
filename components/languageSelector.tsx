@@ -10,6 +10,12 @@ type LanguageSelectorProps = {
     options: string[];
 };
 
+/**
+ * Displays the selected language and opens a full-screen list for choosing another.
+ *
+ * Calls onSelect with the chosen option and closes the list. The close button
+ * dismisses the list without changing the current selection.
+ */
 export default function LanguageSelector({ language, onSelect, options }: LanguageSelectorProps) {
     const [isOpen, setIsOpen] = useState(false);
 

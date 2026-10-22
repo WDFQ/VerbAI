@@ -1,9 +1,21 @@
+"use client";
 import Image from "next/image";
 import SoundIcon from "../public/sound.svg";
 import RetryIcon from "../public/retry.svg";
 import { TranscriptMessage } from "@/types/transcript";
 import { toBcp47 } from "@/lib/languageCodes";
 
+/**
+ * Shared transcript for thw whole conversation (staff and client messages together).
+ * Staff messages are aligned left, client messages are aligned right. 
+ * 
+ * Each message is shown in one of three states:
+ * - loading: a step is still running (spinner)
+ * - error: a step failed (red box with retry button)
+ * - normal: original text plus its translation (text bubble with play audio button)
+ * 
+ * Retries are handled by the parent (app/page.tsx), which owns the state.
+ */
 type TranscriptAreaProps = {
     messages: TranscriptMessage[];
     staffLanguage: string | null;
@@ -12,10 +24,20 @@ type TranscriptAreaProps = {
     onRetryTranslation: (messageId: string) => void;
 };
 
+/**
+ * Requests spoken audio for some text from /api/tts and plays it in the browser. 
+ * The server picks the provider (Google or ElevenLabs) based on the language code.
+ * If the request fails, shows an alert with the error message but the text is still on screen.
+
+ * @param text The text to speak (the translated text)
+ * @param languageCode BCP-47 language code for the text (e.g. "en-US", "es-ES"). If null, the server will pick a default voice.
+ * @returns Resolves when playback has started. Failures show an alert instead of throwing an error.
+ */
 async function handleTextToSpeech(text: string, languageCode: string | null): Promise<void> {
     try {
         const requestBody: { text: string; languageCode?: string } = { text: text };
 
+        // Only send the language code when we have one (toBcp47 can return null if the language is unknown). The server will pick a default voice if it's missing.
         if (languageCode) {
             requestBody.languageCode = languageCode;
         }
@@ -42,10 +64,12 @@ async function handleTextToSpeech(text: string, languageCode: string | null): Pr
             return;
         }
 
+        // The API returns the audio as a blob, which we convert to an object URL and play in an HTMLAudioElement.
         const audioBlob = await response.blob();
         const audioUrl = URL.createObjectURL(audioBlob);
         const audio = new Audio(audioUrl);
 
+        // When the audio finishes playing, revoke the object URL to free up memory.
         audio.addEventListener("ended", function handleAudioPlaybackEnded() {
             URL.revokeObjectURL(audioUrl);
         });
@@ -69,6 +93,10 @@ export default function TranscriptArea({ messages, staffLanguage, clientLanguage
                 }
                 const translatedLanguageCode = toBcp47(translatedLanguage);
 
+                // Work out which state the message is in:
+                // - originalText is null: transcription is still running or failed
+                // - translatedText is null: translation is still running or failed
+                // - hasError turns "still running" into "failed" for the current step
                 let isLoading = false;
                 let retryStage: "transcription" | "translation" | null = null;
             
@@ -88,9 +116,13 @@ export default function TranscriptArea({ messages, staffLanguage, clientLanguage
 
                 const hasError = retryStage !== null;
 
+                // The bubble shows a retry button if the current step failed, 
+                // a spinner if it's still running, or the original + translated 
+                // text if both steps succeeded.
                 let messageBubble;
                 
                 if (retryStage !== null) {
+                    // Copy into a local variable so the click handler below keeps the right value
                     const currentRetryStage = retryStage;
 
                     let retryAriaLabel = "Retry transcription";
@@ -98,6 +130,8 @@ export default function TranscriptArea({ messages, staffLanguage, clientLanguage
                         retryAriaLabel = "Retry translation";
                     }
 
+                    // Error state: retries only the step that failed, not the whole message. 
+                    // The original text is still on screen if transcription succeeded but translation failed.
                     messageBubble = (
                         <div className="max-w-[85%] px-4 py-2 rounded-xl border-2 border-red-500 bg-transparent flex items-center justify-center">
                             <button
@@ -117,6 +151,7 @@ export default function TranscriptArea({ messages, staffLanguage, clientLanguage
                         </div>
                     );
                 } else if (isLoading) {
+                    // Loading state: the original text is hidden until translation is complete.
                     messageBubble = (
                         <div
                             role="status"
@@ -127,6 +162,7 @@ export default function TranscriptArea({ messages, staffLanguage, clientLanguage
                         </div>
                     );
                 } else {
+                    // Normal state: show the original text (large) plus its translation (small), with a play audio button.
                     messageBubble = (
                         <div className={`max-w-[85%] px-3 py-2 rounded-xl text-sm font-playfair-display font-bold ${isStaff ? "bg-gray-300 text-gray-900" : "bg-gray-700 text-white"}`}>
                             <div>
@@ -146,6 +182,8 @@ export default function TranscriptArea({ messages, staffLanguage, clientLanguage
                             {message.role === "staff" ? "Staff" : "Client"}
                         </span>
                         {messageBubble}
+                        {/* Plays the translation output, so the listener hears it in their own language.
+                            Disabled while loading or failed, since there is no translation yet. */}
                         <button
                             type="button"
                             aria-label="Play audio"

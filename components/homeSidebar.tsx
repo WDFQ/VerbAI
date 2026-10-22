@@ -18,6 +18,9 @@ import { Switch } from "@/components/ui/switch";
 import { ChevronDown, Plus, RotateCcwClock, Settings } from "lucide-react";
 import { useTheme } from "@/contexts/themeContext";
 
+/**
+ * Renders the main navigation sidebar, including history and dark-mode controls.
+ */
 export function HomeSidebar() {
 	const { theme, toggleTheme } = useTheme();
 	return (
